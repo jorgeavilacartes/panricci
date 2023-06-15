@@ -4,7 +4,7 @@ channels:
   - anaconda
   - bioconda
 dependencies:
-  - python >= 3.10
+  - python >= 3.9
   - pot
   - networkx
   - networkit
@@ -16,3 +16,4 @@ dependencies:
   - numpy
   - pandas
   - scikit-learn
+  - parasail-python # smith waterman
