@@ -9,13 +9,13 @@ from pathlib import Path
 
 class RicciFlow:
 
-    def __init__(self, G, dist_nodes: Callable, dirsave_graphs: str): 
+    def __init__(self, G, dirsave_graphs: str): 
         # TODO: include threshold_curvature: float 
         # to stop ricci flow if all curvatures are at most at threshold_curvature from the average curvature
         # it means that is constant
 
         self.G = G
-        self.dist_nodes = dist_nodes
+        self.dist_nodes = DistributionNodes(G)
         self.dirsave = Path(dirsave_graphs)
         self.dirsave.mkdir(exist_ok=True, parents=True)
         # self.threshold_curvature = threshold_curvature
