@@ -1,3 +1,4 @@
+![pantera](images/PANRICCI-removebg-preview.png)
 # PanRicci
 Pangenome Graphs with Ricci Flow
 
