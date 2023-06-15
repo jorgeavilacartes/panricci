@@ -1,0 +1,18 @@
+name: panricci
+channels:
+  - conda-forge
+  - anaconda
+  - bioconda
+dependencies:
+  - python >= 3.10
+  - pot
+  - networkx
+  - networkit
+  - tqdm 
+  - seaborn
+  - biopython
+  - jupyterlab
+  - ipykernel
+  - numpy
+  - pandas
+  - scikit-learn
