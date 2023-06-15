@@ -89,7 +89,7 @@ class RicciFlow:
             for j,target in enumerate(dist2.keys()):
                 try:
                     nodes = distances_subgraph[source][target]
-                    edges = [(n1,n2) for n1,n2 in zip(nodes[:-1], nodes[1])]
+                    edges = [(n1,n2) for n1,n2 in zip(nodes[:-1], nodes[1:])]
                     M[i,j] = np.sum([self.G.edges[e]["distance"] for e in edges])
                 except:
                     continue

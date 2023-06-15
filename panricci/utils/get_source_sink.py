@@ -19,4 +19,5 @@ def get_sources_sinks(path_gfa):
                 sources.append(sourceid)
                 sinks.append(sinkid)
     
+    sources, sinks = list(set(sources)), list(set(sinks))
     return sources, sinks
