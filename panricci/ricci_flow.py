@@ -13,7 +13,7 @@ class RicciFlow:
         # TODO: include threshold_curvature: float 
         # to stop ricci flow if all curvatures are at most at threshold_curvature from the average curvature
         # it means that is constant
-        
+
         self.G = G
         self.dist_nodes = dist_nodes
         self.dirsave = Path(dirsave_graphs)
@@ -24,7 +24,7 @@ class RicciFlow:
         for edge in G.edges():
             self.G.edges[edge]["curvature"] = self.G.edges[edge].get("curvature",0)
 
-    def __call__(self, iterations: int,):
+    def __call__(self, iterations: int, save_intermediate_graphs: bool=False):
         # compute curvature for all edges in the graph        
         for it in tqdm(range(iterations), total=iterations, desc="Ricci-Flow"):
             # distances are computed without modify the graph until all edges are used
@@ -33,10 +33,16 @@ class RicciFlow:
             # update distances (Ricci-metric) for each edge
             nx.set_edge_attributes(self.G, distance_by_edge)
 
-            # save graph with updated values
-            path_save = self.dirsave.joinpath(f"graph-iter-{it}.edgelist")
-            # nx.write_weighted_edgelist(self.G, path_save)
-            nx.write_edgelist(self.G, path_save, data=True)
+            if save_intermediate_graphs:
+                # save graph with updated values
+                path_save = self.dirsave.joinpath(f"graph-iter-{it}.edgelist")
+                # nx.write_weighted_edgelist(self.G, path_save)
+                nx.write_edgelist(self.G, path_save, data=True)
+
+        # save last graph with attributes on its edges
+        path_save = self.dirsave.joinpath("graph-ricci-metric.edgelist")
+        nx.write_edgelist(self.G, path_save, data=True)
+        return self.G
             
     def one_iteration(self,):
         "Compute new curvatures, and distances with Ricci Flow"
