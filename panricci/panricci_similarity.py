@@ -38,7 +38,7 @@ class PanRicciSimilarity:
             ricci_graph.add_edges_from([(node,"sink") for node in sinks] , distance=self.DISTANCE_SINKS, label="N")
             
             ricci_graphs.append(ricci_graph)
-            
+
         # alignment of the graphs 
         aligner= GraphAlignment()
         alignment = aligner(ricci_graphs[0],ricci_graphs[1],path_gfa1, path_gfa2)
@@ -54,6 +54,9 @@ class PanRicciSimilarity:
             graph2.remove_nodes_from(["source","sink"])
         except:
             pass 
-        _costs = [ 2-2*elem[1] for elem in alignment]
-        metric = (np.sum(_costs))/(len(graph1)+len(graph2))
+        # _costs = [ 2-2*elem[1] for elem in alignment]
+        opt_edges = [edge for edge, cost in alignment if cost <= self.threshold_alignment]
+        metric = 2*len(alignment)/(len(graph1)+len(graph2))
+        # metric = 2*sum([alignment[edge] for edge in opt_edges])/(len(graph1)+len(graph2))
+        
         return metric
