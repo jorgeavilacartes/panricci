@@ -2,29 +2,30 @@ import numpy as np
 import networkx as nx
 import ot
 
-from .distributions.variation_graph import DistributionNodes
-from typing import Callable
+from typing import Callable, Optional
 from tqdm import tqdm
 from pathlib import Path
 
 class RicciFlow:
 
-    def __init__(self, G, dirsave_graphs: str): 
+    def __init__(self, G, distribution: Callable, dirsave_graphs: Optional[str] = None): 
         # TODO: include threshold_curvature: float 
         # to stop ricci flow if all curvatures are at most at threshold_curvature from the average curvature
         # it means that is constant
 
         self.G = G
-        self.dist_nodes = DistributionNodes(G)
-        self.dirsave = Path(dirsave_graphs)
-        self.dirsave.mkdir(exist_ok=True, parents=True)
+        self.dist_nodes = distribution # mapping from nodes to its distributions
+        self.dirsave = dirsave_graphs
+        if self.dirsave:
+            self.dirsave = Path(self.dirsave)
+            self.dirsave.mkdir(exist_ok=True, parents=True) # TODO: check is a directory
         # self.threshold_curvature = threshold_curvature
 
         # initialize curvature as 0 if it is not an attribute of the edges
         for edge in G.edges():
             self.G.edges[edge]["curvature"] = self.G.edges[edge].get("curvature",0)
 
-    def __call__(self, iterations: int, save_intermediate_graphs: bool=False):
+    def __call__(self, iterations: int, save_last: bool = True, save_intermediate_graphs: bool=False):
         # compute curvature for all edges in the graph        
         for it in tqdm(range(iterations), total=iterations, desc="Ricci-Flow"):
             # distances are computed without modify the graph until all edges are used
@@ -39,9 +40,10 @@ class RicciFlow:
                 # nx.write_weighted_edgelist(self.G, path_save)
                 nx.write_edgelist(self.G, path_save, data=True)
 
-        # save last graph with attributes on its edges
-        path_save = self.dirsave.joinpath("graph-ricci-metric.edgelist")
-        nx.write_edgelist(self.G, path_save, data=True)
+        if save_last:
+            # save last graph with attributes on its edges
+            path_save = self.dirsave.joinpath("graph-ricci-metric.edgelist")
+            nx.write_edgelist(self.G, path_save, data=True)
         return self.G
             
     def one_iteration(self,):

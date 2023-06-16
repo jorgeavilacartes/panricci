@@ -1,7 +1,11 @@
 import networkx as nx
 
 class DistributionNodes:
-
+    """Distribution of nodes is weighted by
+    the node depth: number of paths using that node.
+    node depth is in [0,1],. where 0 means no sequence
+    is using that node, and 1 means all the sequences
+    uses that node."""
     def __init__(self, G, alpha=0.5):
         self.G = G
         self.alpha = alpha
