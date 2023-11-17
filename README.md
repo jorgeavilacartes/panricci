@@ -7,3 +7,23 @@
 ```bash
 mamba env create -n panricci -f envs/panricci.yml
 ```
+
+Activate environment
+```bash
+mamba activate panricci
+```
+
+Install panricci as library in the environment
+From the main folder (parent folder of panricci/) run the following
+[check](https://goodresearch.dev/setup#pip-install-your-package)
+```bash
+pip install -e .
+```
+
+```python
+from panricci
+```
+
+
+# TODO
+- [ ] Plot distributions of nodes after each iteration of ricci flow
