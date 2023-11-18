@@ -24,7 +24,7 @@ class GFALoader:
             nodes[node]["node_depth"] = node_depth
         
         G.add_nodes_from([(node, attrs) for node, attrs in nodes.items()])
-        G.add_edges_from(edges, distance=1)
+        G.add_edges_from(edges,)
         
         return nodes, edges, G
 

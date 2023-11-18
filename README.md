@@ -19,9 +19,15 @@ From the main folder (parent folder of panricci/) run the following
 ```bash
 pip install -e .
 ```
+**NOTE** If changes are not recognized, reinstall library with the pevious command.
+
 
 ```python
-from panricci
+from panricci import  (
+    RicciFlow,
+    Index,
+    PanRicciSimilarity
+)
 ```
 
 

@@ -103,11 +103,11 @@ class GraphAlignment:
         """  
         logging.info("start - compute_vector_representation")
         sources, sinks = get_sources_sinks(path_gfa)
-        ricci_graph.add_edges_from([("source",node) for node in sources] , distance=1, label="N")
-        ricci_graph.add_edges_from([(node,"sink") for node in sinks] , distance=1, label="N")
+        ricci_graph.add_edges_from([("source",node) for node in sources], weight=0, label="N")
+        ricci_graph.add_edges_from([(node,"sink") for node in sinks], weight=0, label="N")
         
-        sp_from_source = nx.shortest_path(ricci_graph, source="source", weight="distance", method="dijkstra")
-        sp_until_sink = nx.shortest_path(ricci_graph, target="sink", weight="distance", method="dijkstra")
+        sp_from_source = nx.shortest_path(ricci_graph, source="source", weight="weight", method="dijkstra")
+        sp_until_sink = nx.shortest_path(ricci_graph, target="sink", weight="weight", method="dijkstra")
 
         del sp_from_source["source"]
         del sp_until_sink["sink"]
@@ -117,13 +117,13 @@ class GraphAlignment:
         for start_node, path in sp_from_source.items():
             nodes = path
             edges = [(n1,n2) for n1,n2 in zip(nodes[:-1], nodes[1:])]
-            cost  = np.sum([ricci_graph.edges[e]["distance"] for e in edges])
+            cost  = np.sum([ricci_graph.edges[e]["weight"] for e in edges])
             costs_from_source[start_node] = cost
 
         for end_node, path in sp_until_sink.items():
             nodes = path
             edges = [(n1,n2) for n1,n2 in zip(nodes[:-1], nodes[1:])]
-            cost  = np.sum([ricci_graph.edges[e]["distance"] for e in edges])
+            cost  = np.sum([ricci_graph.edges[e]["weight"] for e in edges])
             costs_until_sink[end_node] = cost
 
         nodes_vector_representation = {node: np.array([costs_from_source[node], costs_until_sink[node]]) for node in ricci_graph.nodes() if node not in ["source", "sink"]}
