@@ -32,10 +32,10 @@ class RicciFlow:
             self.G.edges[edge]["curvature"] = self.G.edges[edge].get("curvature",0)
             self.G.edges[edge]["weight"] = self.G.edges[edge].get("weight",uniform_weight)
 
-    def __call__(self, iterations: int, save_last: bool = True, save_intermediate_graphs: bool=False, name=None):
+    def run(self, iterations: int, save_last: bool = True, save_intermediate_graphs: bool=False, name=None):
         # TODO: add callbacks
         # save_last and save_intermediate_graphs should be a callback
-        name = name if name else "graph-iter"
+        name = name if name else "graph"
         # compute curvature for all edges in the graph        
         for it in tqdm(range(iterations), total=iterations, desc="RicciFlow"):
             self._counter_iters += 1

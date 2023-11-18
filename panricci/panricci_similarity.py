@@ -47,7 +47,7 @@ class PanRicciSimilarity:
         distribution=DistributionNodes(graph, alpha=self.alpha)
         ricci_flow=RicciFlow(graph, distribution, dirsave_graphs=self.dirsave)
 
-        ricci_graph=ricci_flow(iterations=self.iterations, save_last=False, save_intermediate_graphs=True, name=name)
+        ricci_graph=ricci_flow.run(iterations=self.iterations, save_last=False, save_intermediate_graphs=True, name=name)
 
         # add dummy source and sink nodes (needed in the alignment step)
         if sources:
