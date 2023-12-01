@@ -9,7 +9,7 @@ from pathlib import Path
 import logging
 class RicciFlow:
 
-    def __init__(self, G, distribution: Callable, dirsave_graphs: Optional[str] = None): 
+    def __init__(self, G, distribution: Callable, dirsave_graphs: Optional[str] = None, overwrite: bool = True): 
         # TODO: include threshold_curvature: float 
         # to stop ricci flow if all curvatures are at most at threshold_curvature from the average curvature
         # it means that is constant
@@ -20,10 +20,16 @@ class RicciFlow:
         self.distance_by_edge = None
 
         self._counter_iters = 0
+
+        if overwrite is False and self.dirsave:
+            raise(f"""
+                    {str(self.dirsave)} already exists. To overwrite results set 'overwrite=True'
+                    or use another directory to save results.
+                """)
+
         if self.dirsave:
             self.dirsave = Path(self.dirsave)
-            self.dirsave.mkdir(exist_ok=True, parents=True) # TODO: check is a directory
-        # self.threshold_curvature = threshold_curvature
+            self.dirsave.mkdir(exist_ok=True, parents=True)
 
         # initialize curvature as 0 if it is not an attribute of the edges
         n_edges=len(G.edges())
@@ -32,12 +38,14 @@ class RicciFlow:
             self.G.edges[edge]["curvature"] = self.G.edges[edge].get("curvature",0)
             self.G.edges[edge]["weight"] = self.G.edges[edge].get("weight",uniform_weight)
 
-    def run(self, iterations: int, save_last: bool = True, save_intermediate_graphs: bool=False, name=None):
+    def run(self, iterations: int, save_last: bool = True, save_intermediate_graphs: bool=False, name=None, tol=1e-10):
         # TODO: add callbacks
         # save_last and save_intermediate_graphs should be a callback
         name = name if name else "graph"
+        
         # compute curvature for all edges in the graph        
         for it in tqdm(range(iterations), total=iterations, desc="RicciFlow"):
+            
             self._counter_iters += 1
             logging.info(f"iteration {self._counter_iters}")
             # distances are computed without modify the graph until all edges are used
@@ -52,7 +60,7 @@ class RicciFlow:
             if save_intermediate_graphs:
                 name = name if name else "graph-iter"
                 # save graph with updated values
-                path_save = self.dirsave.joinpath(f"{name}-ricciflow-{it}.edgelist")
+                path_save = self.dirsave.joinpath(f"{name}-ricciflow-{it+1}.edgelist")
                 nx.write_edgelist(self.G, path_save, data=True)
 
             if save_last:

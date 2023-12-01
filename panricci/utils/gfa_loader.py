@@ -26,7 +26,7 @@ class GFALoader:
         G.add_nodes_from([(node, attrs) for node, attrs in nodes.items()])
         G.add_edges_from(edges,)
         
-        return nodes, edges, G
+        return G
 
     def load_nodes_edges(self, path_gfa: str):
         nodes = dict()

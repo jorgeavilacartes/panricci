@@ -5,7 +5,7 @@ from pathlib import Path
 from .ricci_flow import RicciFlow
 from .distributions.variation_graph import DistributionNodes
 from .utils.gfa_loader import GFALoader
-from .utils.get_source_sink import get_sources_sinks
+from .utils.get_source_sink_from_gfa import get_sources_sinks
 from .alignment.graph_alignment import GraphAlignment
 
 import logging 
@@ -24,8 +24,8 @@ class PanRicciSimilarity:
     def __call__(self, path_gfa1, path_gfa2, name_gfa1, name_gfa2):
         
         # load the graphs from gfa files
-        _, _ , graph1 = self.gfa_loader(path_gfa1)
-        _, _ , graph2 = self.gfa_loader(path_gfa2)
+        graph1 = self.gfa_loader(path_gfa1)
+        graph2 = self.gfa_loader(path_gfa2)
         
         # Ricci Flow
         sources1, sinks1 = get_sources_sinks(path_gfa1)
@@ -35,8 +35,9 @@ class PanRicciSimilarity:
         ricci_graph2 = self.apply_ricci_flow(graph2, sources=sources2, sinks=sinks2, name=name_gfa2)
 
         # alignment of the graphs 
-        aligner= GraphAlignment()
-        alignment = aligner(ricci_graph1,ricci_graph2,path_gfa1, path_gfa2)
+        aligner= GraphAlignment(threshold_alignment=self.threshold_alignment,dirsave=self.dirsave)
+        name = f"{name_gfa1}-{name_gfa2}"
+        alignment = aligner(ricci_graph1,ricci_graph2,path_gfa1, path_gfa2, name=name)
         
         metric = self.metric_from_alignment(alignment, ricci_graph1,ricci_graph2)
         return metric , alignment

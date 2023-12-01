@@ -1,12 +1,15 @@
+from collections import defaultdict
 from pathlib import Path
 from typing import Optional, Union
-import numpy as np
-from collections import defaultdict
-import parasail
-import networkx as nx
-from ..utils.get_source_sink import get_sources_sinks
-from ..index.node_embeddings import Index
+
 import logging 
+import parasail         # smith-waterman
+import numpy as np
+import networkx as nx
+
+# panricci
+from .utils import get_sources_sinks
+from ..index.node_embeddings import Index
 
 _Path = Optional[Union[Path, str]]
 
@@ -17,21 +20,30 @@ class GraphAlignment:
     and the cost of each one of them. 
     """
 
-    def __init__(self, threshold_alignment: float = 0.5, 
+    def __init__(self, threshold_alignment: float = 1e5, 
                  dirsave: Optional[_Path] = None
                  ):
         self.threshold_alignment = threshold_alignment
         
         if dirsave:
-            Path(dirsave).mkdir(exist_ok=True, parents=True)
+            dirsave=Path(dirsave)
+            dirsave.mkdir(exist_ok=True, parents=True)
             self.dirsave = dirsave
+        else:
+            self.dirsave=None
     
-    def __call__(self, ricci_graph1,ricci_graph2,path_gfa1, path_gfa2):
+    def __call__(self, ricci_graph1, ricci_graph2, name=None):
         "Alignment of two graphs with Ricci Metric"
-        # alignment
-        bipartite_graph = self.create_bipartite_graph(ricci_graph1, ricci_graph2, path_gfa1, path_gfa2)
-        alignment = nx.bipartite.minimum_weight_full_matching(bipartite_graph, weight="weight")
+        name = "bipartite-graph" if name is None else name
 
+        # alignment
+        bipartite_graph = self.create_bipartite_graph(ricci_graph1, ricci_graph2,)
+        
+        if self.dirsave:
+            nx.write_edgelist(bipartite_graph, self.dirsave.joinpath(f"{name}.edgelist"), data=True)
+
+        # Compute alignment between the two graphs            
+        alignment = nx.bipartite.minimum_weight_full_matching(bipartite_graph, weight="weight")
         opt_alignment=self.parse_optimal_alignment(alignment, bipartite_graph)
         
         return opt_alignment
@@ -53,37 +65,29 @@ class GraphAlignment:
         logging.info("end - parse_optimal_alignment")
         return sorted(optimal_alignment.items(), key=lambda d: (d[0],d[1]),reverse=True)
             
-    def create_bipartite_graph(self, ricci_graph1, ricci_graph2, path_gfa1, path_gfa2):
+    def create_bipartite_graph(self, ricci_graph1, ricci_graph2,):
         """Returns the bipartite graph between
         nodes of both input graphs, to be used for the alignment"""
         logging.info("start - create_bipartite_graph")
         ricci_graph1 = ricci_graph1.copy()
         ricci_graph2 = ricci_graph2.copy()
-        
-        # remove source and sink nodes from both graphs
-        ricci_graph1.remove_nodes_from(["source","sink"])
-        ricci_graph2.remove_nodes_from(["source","sink"])
 
         # nodes are labeled as '<node>-1', if <node> it belongs to the first graph, and '<node>-2' from the second one
         # the cost/weight of an edge (u,v) correspong for the  
         bipartite_graph = nx.Graph()
 
-        ricci_graph1_nodes= [n for n in ricci_graph1.nodes()]
-        ricci_graph2_nodes= [n for n in ricci_graph2.nodes()]
-        
-        # TODO: use faiss
-        # TODO: replace by a function that returns a dictionary of edges: weights
-         
-        # edges_weights_bipartite = compute_edge_weights(nodes1, nodes2)
-        # for edge, weight in edges_weights_bipartite.items():
-            # bipartite_graph.add_edge(edge, weight=weight)
+        nodes1_vector_rep = self.compute_vector_representation(ricci_graph1, )
+        nodes2_vector_rep = self.compute_vector_representation(ricci_graph2, )
 
-        graph1_vector_rep = self.compute_vector_representation(ricci_graph1, path_gfa1)
-        graph2_vector_rep = self.compute_vector_representation(ricci_graph2, path_gfa2)
+        # remove source and sink nodes from both graphs
+        ricci_graph1.remove_nodes_from(["source","sink"])
+        ricci_graph2.remove_nodes_from(["source","sink"])
 
-        for node1 in ricci_graph1_nodes:
-            for node2 in ricci_graph2_nodes:       
-                weight_ricci_metric = np.linalg.norm(graph1_vector_rep[node1] - graph2_vector_rep[node2])
+        for node1 in ricci_graph1.nodes():
+            for node2 in ricci_graph2.nodes(): 
+
+                # cost align two nodes      
+                weight_ricci_metric = np.linalg.norm(nodes1_vector_rep[node1] - nodes2_vector_rep[node2])
                 weight_alignment    = self.compute_weight_alignment(ricci_graph1.nodes[node1]["label"], ricci_graph2.nodes[node2]["label"])
                 
                 weight = 0.5*weight_ricci_metric + 0.5*weight_alignment
@@ -91,18 +95,18 @@ class GraphAlignment:
 
         logging.info("end - create_bipartite_graph")
         return bipartite_graph
-    
-    # def compute_edge_weights(self, nodes1, nodes2):
          
 
     @staticmethod
-    def compute_vector_representation(ricci_graph, path_gfa):
-        """Given a graph after Ricci Flow and with 'source' and 'sink' nodes,
-        compute the vector representation of each node w.r.t. source and 
-        sink nodes using the ricci metric and dijkstra.
+    def compute_vector_representation(ricci_graph):
+        """Given a graph after Ricci Flow, compute the vector representation based on the distances 
+        from a dummy 'source' and dummy 'sink' nodes. Distances are computed using Dijkstra algorithm. 
+        
+        Return a dictionary with nodes id as keys, and a 2d-array with its vector representation
         """  
+        
         logging.info("start - compute_vector_representation")
-        sources, sinks = get_sources_sinks(path_gfa)
+        sources, sinks = get_sources_sinks(ricci_graph)
         ricci_graph.add_edges_from([("source",node) for node in sources], weight=0, label="N")
         ricci_graph.add_edges_from([(node,"sink") for node in sinks], weight=0, label="N")
         
