@@ -31,5 +31,5 @@ def parse_alignment(alignment, graph1, graph2):
                 node_depth2=info1["node_depth"],
             )
         )
-    # return pd.concat([pd.DataFrame(alignment, columns=["edge","weight"]), pd.DataFrame(features)], axis=1)
+
     return  pd.DataFrame(features)
