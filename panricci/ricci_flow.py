@@ -33,10 +33,10 @@ class RicciFlow:
 
         # initialize curvature as 0 if it is not an attribute of the edges
         n_edges=len(G.edges())
-        uniform_weight=1/n_edges
+        weight_init = 1/n_edges
         for edge in G.edges():
             self.G.edges[edge]["curvature"] = self.G.edges[edge].get("curvature",0)
-            self.G.edges[edge]["weight"] = self.G.edges[edge].get("weight",uniform_weight)
+            self.G.edges[edge]["weight"] = self.G.edges[edge].get("weight",weight_init)
 
     def run(self, iterations: int, save_last: bool = True, save_intermediate_graphs: bool=False, name=None, tol=1e-10):
         # TODO: add callbacks
@@ -103,7 +103,7 @@ class RicciFlow:
         return 1 - W/d 
 
     def wasserstein(self, dist1, dist2):
-        "compute wasserstein distance between two distributions"
+        "compute wasserstein distance between two distributions of nodes"
 
         # 1. extract subgraph containing only the involved nodes in dist1 and dist2 
         nodes_subgraph = list(dist1.keys()) + list(dist2.keys())

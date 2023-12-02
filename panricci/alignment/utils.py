@@ -1,3 +1,4 @@
+from collections import defaultdict
 import pandas as pd
 
 def get_sources_sinks(G):
@@ -23,6 +24,8 @@ def parse_alignment(alignment, graph1, graph2):
             dict(
                 edge=edge,
                 cost_alignment=weight,
+                # cost_embeddings=cost_embeddings, 
+                # cost_labels=cost_labels,
                 node1=node1,
                 node2=node2,
                 label1=info1["label"],
@@ -33,3 +36,15 @@ def parse_alignment(alignment, graph1, graph2):
         )
 
     return  pd.DataFrame(features)
+
+def count_kmers(sequence: str, k: int): 
+    freq_kmer = defaultdict(int)
+    # representativity of kmers
+    last_j = len(sequence) - k + 1   
+    kmers  = (sequence[i:(i+k)] for i in range(last_j))
+    # count kmers in a dictionary
+    for kmer in kmers:
+        if "N" not in kmer:
+            freq_kmer[kmer] +=1
+    
+    return freq_kmer
