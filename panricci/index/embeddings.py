@@ -38,4 +38,3 @@ class Index:
             index.add(emb)
         
         return index
-

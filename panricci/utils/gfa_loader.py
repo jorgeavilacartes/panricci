@@ -13,7 +13,7 @@ class GFALoader:
     def __init__(self, undirected=False):
         self.undirected = undirected
 
-    def __call__(self, path_gfa: str, path_chechkpoint_ricciflow: Optional[str]):
+    def __call__(self, path_gfa: str, path_chechkpoint_ricciflow: Optional[str]=None):
         
         G = nx.Graph() if self.undirected else nx.DiGraph()
 

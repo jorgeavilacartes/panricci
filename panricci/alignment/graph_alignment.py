@@ -9,8 +9,14 @@ import networkx as nx
 
 # panricci
 from .utils import get_sources_sinks
-from .node_features import compute_node_embeddings, shortest_paths
-from ..index.node_embeddings import Index
+from .node_embeddings import (
+    shortest_paths,
+    compute_node_embeddings,
+    compute_prefix_suffix_feature
+)
+
+from .node_embeddings import NodeEmbeddings
+from ..index.embeddings import Index
 
 _Path = Optional[Union[Path, str]]
 
@@ -22,10 +28,19 @@ class GraphAlignment:
     """
 
     def __init__(self, threshold_alignment: float = 1e5, 
-                 dirsave: Optional[_Path] = None
+                 dirsave: Optional[_Path] = None,
+                 ricci_embedding = True,
+                 kmer_embedding = True,
+                 kmer_size = 1, 
                  ):
         self.threshold_alignment = threshold_alignment
         
+        # node features
+        self.ricci_embedding = ricci_embedding
+        self.kmer_embedding  = kmer_embedding
+        self.kmer_size = kmer_size
+        self.node_feature = NodeEmbeddings(ricci_embedding, kmer_embedding, kmer_size)
+
         if dirsave:
             dirsave=Path(dirsave)
             dirsave.mkdir(exist_ok=True, parents=True)
@@ -79,8 +94,8 @@ class GraphAlignment:
 
         sp_from_source1, sp_until_sink1 = shortest_paths(ricci_graph1)
         sp_from_source2, sp_until_sink2 = shortest_paths(ricci_graph2)
-        nodes1_vector_rep = compute_node_embeddings(ricci_graph1,)# sp_from_source1, sp_until_sink1)
-        nodes2_vector_rep = compute_node_embeddings(ricci_graph2,)# sp_from_source2, sp_until_sink2)
+        nodes1_vector_rep = compute_node_embeddings(ricci_graph1, sp_from_source1, sp_until_sink1)
+        nodes2_vector_rep = compute_node_embeddings(ricci_graph2, sp_from_source2, sp_until_sink2)
 
         # remove source and sink nodes from both graphs
         ricci_graph1.remove_nodes_from(["source","sink"])
@@ -91,9 +106,10 @@ class GraphAlignment:
 
                 # cost align two nodes      
                 cost_embeddings = self.compute_cost_embeddings(nodes1_vector_rep[node1], nodes2_vector_rep[node2])
-                cost_labels     = self.compute_cost_labels(ricci_graph1.nodes[node1]["label"], ricci_graph2.nodes[node2]["label"])
+                # cost_labels     = self.compute_cost_labels(ricci_graph1.nodes[node1]["label"], ricci_graph2.nodes[node2]["label"])
                 # print(f"(cost_embeddings={cost_embeddings}, cost_labels={cost_labels})")
-                weight = 0.5*cost_embeddings + 0.5*cost_labels
+                # weight = 0.5*cost_embeddings + 0.5*cost_labels
+                weight = cost_embeddings
                 bipartite_graph.add_edge(node1+"-1", node2+"-2", weight=weight, cost_embeddings=cost_embeddings, cost_labels=cost_labels)
 
         logging.info("end - create_bipartite_graph")
