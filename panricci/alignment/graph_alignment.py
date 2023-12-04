@@ -30,16 +30,21 @@ class GraphAlignment:
     def __init__(self, threshold_alignment: float = 1e5, 
                  dirsave: Optional[_Path] = None,
                  ricci_embedding = True,
-                 kmer_embedding = True,
-                 kmer_size = 1, 
+                 seq_embedding = False,
+                 kmer_size = 1,
+                 max_len: Optional[int] = None, 
                  ):
         self.threshold_alignment = threshold_alignment
         
         # node features
         self.ricci_embedding = ricci_embedding
-        self.kmer_embedding  = kmer_embedding
+        self.seq_embedding  = seq_embedding
         self.kmer_size = kmer_size
-        self.node_feature = NodeEmbeddings(ricci_embedding, kmer_embedding, kmer_size)
+        self.max_len = max_len
+        self.compute_node_embeddings = NodeEmbeddings(
+                                            ricci_embedding,                                         # weights form ricci flow
+                                            seq_embedding, kmer_size=kmer_size, max_len=max_len      # kmer distribution of prefix and suffix (split at node)
+                                            )
 
         if dirsave:
             dirsave=Path(dirsave)
@@ -92,11 +97,15 @@ class GraphAlignment:
         # the cost/weight of an edge (u,v) correspong for the  
         bipartite_graph = nx.Graph()
 
-        sp_from_source1, sp_until_sink1 = shortest_paths(ricci_graph1)
-        sp_from_source2, sp_until_sink2 = shortest_paths(ricci_graph2)
-        nodes1_vector_rep = compute_node_embeddings(ricci_graph1, sp_from_source1, sp_until_sink1)
-        nodes2_vector_rep = compute_node_embeddings(ricci_graph2, sp_from_source2, sp_until_sink2)
+        # sp_from_source1, sp_until_sink1 = shortest_paths(ricci_graph1)
+        # sp_from_source2, sp_until_sink2 = shortest_paths(ricci_graph2)
+        # nodes1_vector_rep = compute_node_embeddings(ricci_graph1, sp_from_source1, sp_until_sink1)
+        # nodes2_vector_rep = compute_node_embeddings(ricci_graph2, sp_from_source2, sp_until_sink2)
 
+        nodes1_vector_rep = self.compute_node_embeddings(ricci_graph1, )
+        nodes2_vector_rep = self.compute_node_embeddings(ricci_graph2, )
+
+    
         # remove source and sink nodes from both graphs
         ricci_graph1.remove_nodes_from(["source","sink"])
         ricci_graph2.remove_nodes_from(["source","sink"])
@@ -110,13 +119,16 @@ class GraphAlignment:
                 # print(f"(cost_embeddings={cost_embeddings}, cost_labels={cost_labels})")
                 # weight = 0.5*cost_embeddings + 0.5*cost_labels
                 weight = cost_embeddings
-                bipartite_graph.add_edge(node1+"-1", node2+"-2", weight=weight, cost_embeddings=cost_embeddings, cost_labels=cost_labels)
+                bipartite_graph.add_edge(node1+"-1", node2+"-2", weight=weight) #, cost_embeddings=cost_embeddings, cost_labels=cost_labels)
 
         logging.info("end - create_bipartite_graph")
         return bipartite_graph
          
     @staticmethod
     def compute_cost_labels(seq1, seq2,):
+        # TODO: use EDIT distance
+        # https://pypi.org/project/editdistance/
+        # https://pypi.org/project/python-Levenshtein/
         "Weight to penalize cost of aligning two nodes"
         result = parasail.sw_stats(seq1,seq2, open=10, extend=2, matrix=parasail.dnafull)
         m = result.matches

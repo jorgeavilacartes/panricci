@@ -5,6 +5,8 @@ import numpy as np
 from typing import Optional 
 from .utils import get_sources_sinks, count_kmers
 
+from itertools import product
+
 def shortest_paths(G):
     "Return the shortest paths from source and sink"
     # G_copy = copy.deepcopy(G)
@@ -21,12 +23,16 @@ def shortest_paths(G):
     
     return sp_from_source, sp_until_sink
 
-def feature_from_seq(seq):
+def feature_from_seq(seq, k):
     "Return an 1d-array with the distribution of 1-mers in sorted order"
-    kmers = count_kmers(seq, k=1)
-    return np.array([kmers.get(c,0) for c in "ACGT"]) / len(seq)
+    kmers = count_kmers(seq, k=k)
+    sorted_list_kmers = list("".join(kmer) for kmer in product("ACGT", repeat=k))    
 
-def compute_prefix_suffix_feature(G, sp_from_source, sp_until_sink, max_len: Optional[int]=None):
+    if len(seq)-k+1 < 1:
+        return np.zeros((len(sorted_list_kmers)))
+    return np.array([kmers.get(c,0) for c in sorted_list_kmers]) / (len(seq)-k+1) # return normalized frequency 
+
+def compute_prefix_suffix_feature(G, sp_from_source, sp_until_sink, kmer_size: Optional[int]=None, max_len: Optional[int]=None):
     """compute vector with 1-mer normalized frequencies for prefix (source,node) and suffix (node,sink) sequences
     using the labels of the shortest paths from source and to sink
     """
@@ -39,7 +45,7 @@ def compute_prefix_suffix_feature(G, sp_from_source, sp_until_sink, max_len: Opt
             if max_len:
                 prefix_label = prefix_label[::-1][:max_len][::-1]
 
-            prefix_feature =  feature_from_seq(prefix_label)
+            prefix_feature =  feature_from_seq(prefix_label,k=kmer_size)
             prefix_features[start_node] = prefix_feature
 
     suffix_features = dict()
@@ -51,7 +57,7 @@ def compute_prefix_suffix_feature(G, sp_from_source, sp_until_sink, max_len: Opt
             if max_len:
                 suffix_label = suffix_label[:max_len]
 
-            suffix_feature =  feature_from_seq(suffix_label)
+            suffix_feature =  feature_from_seq(suffix_label, k=kmer_size)
             suffix_features[end_node] = suffix_feature
 
     nodes_features = {
@@ -91,10 +97,10 @@ def compute_node_embeddings(G, sp_from_source, sp_until_sink):
 
 class NodeEmbeddings:
 
-    def __init__(self, ricci_embedding=True, seq_embedding=False, max_len: Optional[int]= None):
+    def __init__(self, ricci_embedding=True, seq_embedding=False, kmer_size: Optional[int]=None, max_len: Optional[int]= None):
         self.ricci_embedding = ricci_embedding
         self.seq_embedding = seq_embedding
-        # self.kmer_size = kmer_size
+        self.kmer_size = kmer_size
         self.max_len = max_len
 
     def __call__(self, G):
@@ -106,7 +112,7 @@ class NodeEmbeddings:
             ricci_emb = compute_node_embeddings(G_copy, sp_from_source, sp_until_sink)
 
         if self.seq_embedding:
-            seq_emb = compute_prefix_suffix_feature(G_copy, sp_from_source, sp_until_sink, max_len=self.max_len)
+            seq_emb = compute_prefix_suffix_feature(G_copy, sp_from_source, sp_until_sink, kmer_size=self.kmer_size, max_len=self.max_len)
         
         if self.ricci_embedding and self.seq_embedding:
             emb = dict()
