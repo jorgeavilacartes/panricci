@@ -1,3 +1,4 @@
+from typing import Optional
 from collections import defaultdict
 import networkx as nx
 
@@ -12,7 +13,7 @@ class GFALoader:
     def __init__(self, undirected=False):
         self.undirected = undirected
 
-    def __call__(self, path_gfa: str):
+    def __call__(self, path_gfa: str, path_chechkpoint_ricciflow: Optional[str]):
         
         G = nx.Graph() if self.undirected else nx.DiGraph()
 
@@ -25,6 +26,10 @@ class GFALoader:
         
         G.add_nodes_from([(node, attrs) for node, attrs in nodes.items()])
         G.add_edges_from(edges,)
+
+        if path_chechkpoint_ricciflow:
+            data_edges = self.load_edge_attributes(path_chechkpoint_ricciflow)
+            nx.set_edge_attributes(G, data_edges)
         
         return G
 
@@ -75,4 +80,20 @@ class GFALoader:
                         paths_by_node[nodeid].append(seq_id)
     
         return {node: len(set(paths))/n_paths for node, paths in paths_by_node.items()}
-   
+
+    def load_edge_attributes(self, path_chechkpoint_ricciflow):
+        "Load RicciFlow checkpoint from .edgelist"
+        G = self.edgelist_loader(path_chechkpoint_ricciflow)
+        data_edges = dict()
+        for u,v,data in G.edges(data=True):
+            data_edges[(u,v)] = data
+        return data_edges
+
+    def edgelist_loader(self, path):
+        assert str(path).endswith(".edgelist"), "Must be .edgelist"
+        return nx.read_edgelist(
+                            path,    # path checkpoint
+                            nodetype=str, 
+                            create_using=nx.DiGraph
+                            )
+
