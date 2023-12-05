@@ -41,8 +41,7 @@ class RicciFlow:
 
 
     def run(self, iterations: int, name=None):
-        # TODO: add callbacks
-        # save_last and save_intermediate_graphs should be a callback
+
         name = name if name else "graph"
         
         # compute curvature for all edges in the graph        
@@ -50,20 +49,24 @@ class RicciFlow:
             
             self._counter_iters += 1
             logging.info(f"iteration {self._counter_iters}")
+            
             # distances are computed without modify the graph until all edges are used
-            new_weights, new_curvatures = self.iter_ricci_flow()
+            new_weights = self.iter_ricci_flow()
             
             # update weights (Ricci-metric) for each edge
             nx.set_edge_attributes(self.G, new_weights)
-            nx.set_edge_attributes(self.G, new_curvatures)
             
-            # TODO: EarlyStopping-Callback: check if curvatures changed
+            # update curvature with the current weight 
+            for edge in self.G.edges:
+                self.G.edges[edge]["curvature"] = self.compute_curvature(edge)
+                # nx.set_edge_attributes(self.G, new_curvatures)
+                       
+            self.checkpoints(it, name)
+
             if self.is_curvature_below_tol():
                 print(f"Stopping Ricci-Flow in iteration {it}, all curvatures below tol={self.tol}")
                 break
-
-            self.checkpoints(it, name)
-
+            
         return self.G
             
     def iter_ricci_flow(self, eps=1):
@@ -75,7 +78,7 @@ class RicciFlow:
         for edge in self.G.edges():
 
             # compute curvature and update it
-            current_curvature = self.compute_curvature(edge)
+            current_curvature = self.G.edges[edge]["curvature"] #self.compute_curvature(edge)
 
             # update weights with Ricci-Flow
             current_weight = self.G.edges[edge]["weight"]
@@ -83,9 +86,9 @@ class RicciFlow:
             new_weight = current_weight - eps*current_curvature*current_weight
             
             new_weights[edge] = {"weight": new_weight}
-            new_curvatures[edge] = {"curvature": current_curvature}
+            # new_curvatures[edge] = {"curvature": current_curvature}
 
-        return new_weights, new_curvatures
+        return new_weights
             
     def compute_curvature(self, edge):
         "Compute curvature of an edge"
@@ -151,5 +154,8 @@ class RicciFlow:
         weight_init = 1/n_edges
 
         for edge in self.G.edges():
-            self.G.edges[edge]["curvature"] = self.G.edges[edge].get("curvature",1)
+            # self.G.edges[edge]["curvature"] = self.G.edges[edge].get("curvature",1)
             self.G.edges[edge]["weight"] = self.G.edges[edge].get("weight",weight_init)
+
+        for edge in self.G.edges():
+            self.G.edges[edge]["curvature"] = self.compute_curvature(edge)
