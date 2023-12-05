@@ -9,7 +9,7 @@ from pathlib import Path
 import logging
 class RicciFlow:
 
-    def __init__(self, G, distribution: Callable, dirsave_graphs: Optional[str] = None, overwrite: bool = True): 
+    def __init__(self, G, distribution: Callable, dirsave_graphs: Optional[str] = None, overwrite: bool = True, tol=1e-11): 
         # TODO: include threshold_curvature: float 
         # to stop ricci flow if all curvatures are at most at threshold_curvature from the average curvature
         # it means that is constant
@@ -18,7 +18,8 @@ class RicciFlow:
         self.distribution_nodes = distribution # mapping from nodes to its distributions
         self.dirsave = dirsave_graphs
         self.distance_by_edge = None
-
+        self.tol = tol # tolerance of minimum curvature to stop Ricci-Flow when |K(u,v)| < tol for all (u,v) edge of G
+ 
         self._counter_iters = 0
 
         if overwrite is False and self.dirsave:
@@ -35,10 +36,10 @@ class RicciFlow:
         n_edges=len(G.edges())
         weight_init = 1/n_edges
         for edge in G.edges():
-            self.G.edges[edge]["curvature"] = self.G.edges[edge].get("curvature",0)
+            self.G.edges[edge]["curvature"] = self.G.edges[edge].get("curvature",1)
             self.G.edges[edge]["weight"] = self.G.edges[edge].get("weight",weight_init)
 
-    def run(self, iterations: int, save_last: bool = True, save_intermediate_graphs: bool=False, name=None, tol=1e-10):
+    def run(self, iterations: int, save_last: bool = True, save_intermediate_graphs: bool=False, name=None):
         # TODO: add callbacks
         # save_last and save_intermediate_graphs should be a callback
         name = name if name else "graph"
@@ -51,11 +52,14 @@ class RicciFlow:
             # distances are computed without modify the graph until all edges are used
             new_weights, new_curvatures = self.iter_ricci_flow()
             
-            # TODO: EarlyStopping-Callback: check if curvatures changed
-            
             # update weights (Ricci-metric) for each edge
             nx.set_edge_attributes(self.G, new_weights)
             nx.set_edge_attributes(self.G, new_curvatures)
+            
+            # TODO: EarlyStopping-Callback: check if curvatures changed
+            if self.is_curvature_below_tol():
+                print(f"Stopping Ricci-Flow in iteration {it}, all curvatures below tol={self.tol}")
+                break
 
             if save_intermediate_graphs:
                 name = name if name else "graph-iter"
@@ -100,7 +104,7 @@ class RicciFlow:
         W = self.wasserstein(dist1,dist2)
         d = self.G.edges[edge]["weight"] #FIXME: should be distance computed with dijkstra
         
-        return 1 - W/d 
+        return 1 - W/d
 
     def wasserstein(self, dist1, dist2):
         "compute wasserstein distance between two distributions of nodes"
@@ -129,3 +133,10 @@ class RicciFlow:
         a,b=list(dist1.values()), list(dist2.values())
         
         return ot.emd2(a,b,M)
+    
+    def is_curvature_below_tol(self,):
+
+        for u,v, data in self.G.edges(data=True):
+            if np.abs(data["curvature"]) > self.tol:
+                return False
+        return True
