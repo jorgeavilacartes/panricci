@@ -1,4 +1,6 @@
 import typer
+import logging
+
 
 MARKDOWN = """
 # `panricci` WHAT-TO-DO?   
@@ -30,15 +32,12 @@ from rich.markdown import Markdown
 console = Console()
 app = typer.Typer(name="PanRicci", rich_markup_mode="rich",
                   help="""
-                  :cat: Welcome to [bold]Pan[/bold]Ricci Alignment of pangenome graphs with Ricci-Flow
+                  :cat: Welcome to [white bold]PanRicci[/white bold] :  Alignment of pangenome graphs with Ricci-Flow
                   """
                   )
-
-
-@app.command("docs", help="Open documentation webpage.")
-def github() -> None:
-    typer.launch("https://github.com/jorgeavilacartes/panricci")
-
+# @app.command("docs", help="Open documentation webpage.")
+# def github() -> None:
+#     typer.launch("https://github.com/jorgeavilacartes/panricci")
 
 @app.command("ricci-flow", help="apply ricci flow to a graph.")
 def ricci_flow(
@@ -46,7 +45,7 @@ def ricci_flow(
         iterations: int,
         undirected: bool = False,
         sequence_graph: bool = False,
-        dirsave: str = "output-ricci-flow", 
+        prefix_save: str = "output-ricci-flow/ricci-graph", 
     ):
     from pathlib import Path
     from panricci import RicciFlow
@@ -57,7 +56,7 @@ def ricci_flow(
     else:
         from panricci.distributions.variation_graph import DistributionNodes
     
-    dirsave = Path(dirsave)
+    dirsave = Path(prefix_save).parent
     dirsave.mkdir(exist_ok=True, parents=True)
 
     # load graph
@@ -75,11 +74,11 @@ def ricci_flow(
                                dirsave_graphs=dirsave,
                                )
     # ricci_flow = RicciFlow(G, distribution, dirsave_graphs=dirsave, save_last=False, save_intermediate_graphs=True)
-    G_ricci = ricci_flow.run(iterations=iterations, name=Path(gfa).stem)
+    G_ricci = ricci_flow.run(iterations=iterations, name=Path(prefix_save).stem)
 
     return G_ricci
 
-@app.command("align", help="Alignment of ricci graphs.")
+@app.command("alignment", help="Alignment of pangenome graphs.")
 def alignment(
         gfa1: str,
         gfa2: str,
@@ -102,6 +101,58 @@ def alignment(
     parse_alignment(alignment, g1, g2).\
     sort_values(by="cost_alignment").\
     to_csv(dirsave.joinpath(f"alignment-{Path(gfa1).stem}-{Path(gfa2).stem}.tsv"),sep="\t")
+
+@app.command("align", help="Alignment of ricci graphs.")
+def align(
+        ricci1: str,
+        ricci2: str,
+        path_save: str = "output-ricci-flow/align/ricci1-ricci2.tsv",
+        metadata_nodes: bool = False,
+        gfa1: str = None,
+        gfa2: str = None, 
+):
+    
+    from pathlib import Path
+    import networkx as nx
+
+    from panricci.utils import GFALoader
+    from panricci.alignment import GraphAlignment, parse_alignment
+    from panricci.utils import GFALoader
+
+    dirsave=Path(path_save)
+    dirsave.parent.mkdir(exist_ok=True, parents=True)
+
+    # add weights to graphs
+    g1 = nx.read_edgelist(ricci1, data=True, create_using=nx.DiGraph) # DiGraph to find source and sinks nodes   
+    g2 = nx.read_edgelist(ricci2, data=True, create_using=nx.DiGraph) # Otherwise, provide source and sinks nodes (TODO)
+
+    aligner = GraphAlignment(
+    ricci_embedding = True, 
+    seq_embedding = False, ) # kmer_size=4)
+    alignment = aligner(g1, g2, name="alignment") 
+
+    # load pangenome graphs with node info, and add the weight
+    if metadata_nodes:
+        gfa_loader = GFALoader(undirected=False)
+        graph1 = gfa_loader(gfa1)
+        for edge, d in g1.edges.items():
+            graph1.edges[edge]["weight"] = edge["weight"]
+            graph1.edges[edge]["curvature"] = edge["curvature"]
+
+        graph2 = gfa_loader(gfa2)
+        for edge, d in g2.edges.items():
+            graph2.edges[edge]["weight"] = edge["weight"]
+            graph2.edges[edge]["curvature"] = edge["curvature"]
+    else:
+        graph1 = g1 
+        graph2 = g2
+    
+    parse_alignment(alignment, graph1, graph2).\
+    sort_values(by="cost_alignment").\
+    to_csv(dirsave,sep="\t")
+
+
+
 
 if __name__ == "__main__":
     app()

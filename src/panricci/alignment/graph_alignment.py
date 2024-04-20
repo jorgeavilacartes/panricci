@@ -20,6 +20,11 @@ from ..index.embeddings import Index
 
 _Path = Optional[Union[Path, str]]
 
+logging.basicConfig(level=logging.DEBUG,
+                    format='[Alignment] %(asctime)s.%(msecs)03d | %(message)s',
+                    datefmt='%Y-%m-%d@%H:%M:%S')
+
+
 class GraphAlignment:
     """Given two graphs (after Ricci Flow), compute 
     an approximate alignment between the nodes of both graphs.
@@ -58,15 +63,19 @@ class GraphAlignment:
         name = "bipartite-graph" if name is None else name
 
         # alignment
+        logging.info("Creating bipartite graph")
         bipartite_graph = self.create_bipartite_graph(ricci_graph1, ricci_graph2,)
         
         if self.dirsave:
+            logging.info("Saving bipartite graph")
             nx.write_edgelist(bipartite_graph, self.dirsave.joinpath(f"{name}.edgelist"), data=True)
 
-        # Compute alignment between the two graphs            
+        # Compute alignment between the two graphs
+        logging.info("Starting alignment on bipartite graph: minimum-weight-full-matching")            
         alignment = nx.bipartite.minimum_weight_full_matching(bipartite_graph, weight="weight")
+        logging.info("filtering optimal alignment")
         opt_alignment=self.filter_optimal_alignment(alignment, bipartite_graph)
-        
+        logging.info("Done!")
         return opt_alignment
 
     def filter_optimal_alignment(self, alignment, bipartite_graph):

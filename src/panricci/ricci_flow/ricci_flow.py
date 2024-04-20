@@ -7,6 +7,11 @@ from tqdm import tqdm
 from pathlib import Path
 
 import logging
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='[Ricci-Flow] %(asctime)s.%(msecs)03d | %(message)s',
+                    datefmt='%Y-%m-%d@%H:%M:%S')
+
 class RicciFlow:
 
     def __init__(self, 

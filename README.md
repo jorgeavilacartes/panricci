@@ -41,6 +41,29 @@ ___
 1. You need to evolve the metric of the graph, this is randomnly initialized.
 2. Once you have two graphs with the metrics after Ricci-Flow, we can align them.
 3. Check the results. 
+
+```{bash}
+panricci --help
+                                                                                           
+ Usage: panricci [OPTIONS] COMMAND [ARGS]...                                               
+                                                                                           
+ 🐱 Welcome to PanRicci Alignment of pangenome graphs with Ricci-Flow                      
+                                                                                           
+╭─ Options ───────────────────────────────────────────────────────────────────────────────╮
+│ --install-completion          Install completion for the current shell.                 │
+│ --show-completion             Show completion for the current shell, to copy it or      │
+│                               customize the installation.                               │
+│ --help                        Show this message and exit.                               │
+╰─────────────────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ──────────────────────────────────────────────────────────────────────────────╮
+│ align        Alignment of ricci graphs.                                                 │
+│ docs         Open documentation webpage.                                                │
+│ ricci-flow   apply ricci flow to a graph.                                               │
+╰─────────────────────────────────────────────────────────────────────────────────────────╯
+
+
+```
+
 ___ 
 ## PanRicci examples
 
