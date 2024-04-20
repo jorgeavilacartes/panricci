@@ -7,12 +7,15 @@
 with tools from Riemannian Geometry. 
 
 A pangenome graph in the `panricci` universe is a manifold $\mathcal{X}$ provided of a metric $d$ 
-(weights of the edges), where nodes encode information in probability distributions. 
+(weights of the edges), where nodes encode information in probability distributions over its (1-hop) neighborhood. 
 
 This manifold is evolved over time by using the Ricci-Flow, an algorithm that leverages the notion
-of curvature of edges to modify its weights until the curvature is constant.
+of curvature of edges to modify its weights until the curvature is constant (equal to 0).
 
-Once the graph reach the state of constant curvature, we can use it to perform alignment of two graphs.
+Once the graph reach the state of constant curvature, we can use it to perform alignment of two graphs
+by definining coordinates with respect to source and sink nodes in our (directed) pangenome graphs.
+
+**NOTE** Each pangenome graph (input file, and manifold) is assumed to be one single connected component.  
 
 ## 1. Install
 Clone this repository, then from the main folder, follow the next steps
@@ -20,7 +23,7 @@ Clone this repository, then from the main folder, follow the next steps
 ### Create environment
 (use `conda`/`miniconda/``mamba`/`micromamba`)
 ```bash
-mamba env create -n panricci -f envs/panricci.yml
+mamba env create -n panricci -f panricci.yml
 ```
 
 Activate environment
@@ -28,19 +31,24 @@ Activate environment
 mamba activate panricci
 ```
 
-Install `panricci` as library in the environment.
-
-<!-- [check](https://goodresearch.dev/setup#pip-install-your-package) -->
-```bash
-pip install -e .
-```
+Developer note: This will install `panricci` as a pip library in editable mode.
 **NOTE** If changes are not recognized, reinstall library with the pevious command.
 
-## 2. PanRicci
+___
+## CLI
+`panricci` works with pangenome graphs (variation graphs or sequence graphs) in `.gfa` format.
+
+1. You need to evolve the metric of the graph, this is randomnly initialized.
+2. Once you have two graphs with the metrics after Ricci-Flow, we can align them.
+3. Check the results. 
+___ 
+## PanRicci examples
 
 To see examples check
-1. `notebooks/ricci-flow.ipynb`
-2. `notebooks/graph-alignment.ipynb`
+TODO: add links 
+1. Compute Ricci-Flow on a pangenome graph `notebooks/ricci-flow.ipynb`
+2. Alignment of pangenome graphs with Ricci-Flow `notebooks/graph-alignment.ipynb`
 
+___ 
 # TODO
 - [ ] Plot distributions of nodes after each iteration of ricci flow
