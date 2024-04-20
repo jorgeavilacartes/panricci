@@ -93,11 +93,11 @@ class RicciFlow:
     def compute_curvature(self, edge):
         "Compute curvature of an edge"
         node1, node2 = edge
-        dist1 = self.distribution_nodes(node1)
-        dist2 = self.distribution_nodes(node2)
+        d_1 = self.distribution_nodes(node1)
+        d_2 = self.distribution_nodes(node2)
         
-        W = self.wasserstein(dist1,dist2)
-        d = self.G.edges[edge]["weight"] #FIXME: should be distance computed with dijkstra
+        W = self.wasserstein(d_1,d_2)
+        d = self.G.edges[edge]["weight"]
         
         return 1 - W/d
 

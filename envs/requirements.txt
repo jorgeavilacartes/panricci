@@ -1,0 +1,14 @@
+python >= 3.9
+pot
+networkx
+networkit
+tqdm 
+seaborn
+biopython
+jupyterlab
+ipykernel
+numpy
+pandas
+scikit-learn
+parasail-python # smith waterman
+typer[all]

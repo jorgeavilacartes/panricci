@@ -5,11 +5,18 @@ import logging
 
 class NormalizedRicciFlow(RicciFlow):
 
-    def __init__(self, G, distribution: Callable, sigma: float = 1, dirsave_graphs: str | None = None, overwrite: bool = True, save_last: bool = True, save_intermediate_graphs: bool = False, tol=1e-11):
+    def __init__(self, G, distribution: Callable, 
+                 sigma: float = 1, 
+                 dirsave_graphs: str | None = None, 
+                 overwrite: bool = True, 
+                 save_last: bool = True, 
+                 save_intermediate_graphs: bool = False, 
+                 tol=1e-11
+                 ):
         self.sigma = sigma
         super().__init__(G, distribution, dirsave_graphs, overwrite, save_last, save_intermediate_graphs, tol)
         
-    def iter_ricci_flow(self, eps=1):
+    def iter_ricci_flow(self, eps=0.5):
         "Compute new curvatures, and distances with Ricci Flow"
         logging.info(f"Normalized Ricci-Flow iteration {self._counter_iters}")
 

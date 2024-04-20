@@ -1,0 +1,16 @@
+# python >= 3.9
+typer[all]
+pot==0.9.1
+networkx==3.2.1
+networkit==10.1
+tqdm==4.66.1
+seaborn==0.13.0
+biopython==1.81
+jupyterlab
+ipykernel
+numpy==1.26
+pandas==2.1.3
+scikit-learn==1.3.2
+faiss==1.8.0
+# parasail-python==1.3.4 # smith waterman
+# typer[all]

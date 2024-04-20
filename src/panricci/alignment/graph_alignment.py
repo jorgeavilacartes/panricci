@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 import logging 
-import parasail         # smith-waterman
+# import parasail         # smith-waterman
 import numpy as np
 import networkx as nx
 
@@ -130,10 +130,11 @@ class GraphAlignment:
         # https://pypi.org/project/editdistance/
         # https://pypi.org/project/python-Levenshtein/
         "Weight to penalize cost of aligning two nodes"
-        result = parasail.sw_stats(seq1,seq2, open=10, extend=2, matrix=parasail.dnafull)
-        m = result.matches
-        L = max(len(seq1),len(seq2))
-        w = (L-m)/L # weight based on smith-waterman
+        # result = parasail.sw_stats(seq1,seq2, open=10, extend=2, matrix=parasail.dnafull)
+        # m = result.matches
+        # L = max(len(seq1),len(seq2))
+        # w = (L-m)/L # weight based on smith-waterman
+        w=0
         return w
     
     @staticmethod
