@@ -69,6 +69,7 @@ class RicciFlow:
             self.checkpoints(it, name)
 
             if self.is_curvature_below_tol():
+                logging.info(f"Stopping Ricci-Flow in iteration {it}, all curvatures below tol={self.tol}")
                 print(f"Stopping Ricci-Flow in iteration {it}, all curvatures below tol={self.tol}")
                 break
             
@@ -138,6 +139,7 @@ class RicciFlow:
 
         for u,v, data in self.G.edges(data=True):
             if np.abs(data["curvature"]) > self.tol:
+                logging.info(f"curvature of edge K({u},{v}){data['curvature']} is > tol={self.tol}")
                 return False
         return True
     

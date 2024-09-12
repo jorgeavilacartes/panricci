@@ -124,7 +124,7 @@ class GraphAlignment:
 
                 # cost align two nodes      
                 cost_embeddings = self.compute_cost_embeddings(nodes1_vector_rep[node1], nodes2_vector_rep[node2])
-                # cost_labels     = self.compute_cost_labels(ricci_graph1.nodes[node1]["label"], ricci_graph2.nodes[node2]["label"])
+                cost_labels     = self.compute_cost_labels(ricci_graph1.nodes[node1]["label"], ricci_graph2.nodes[node2]["label"])
                 # print(f"(cost_embeddings={cost_embeddings}, cost_labels={cost_labels})")
                 # weight = 0.5*cost_embeddings + 0.5*cost_labels
                 weight = cost_embeddings
@@ -143,7 +143,7 @@ class GraphAlignment:
         # m = result.matches
         # L = max(len(seq1),len(seq2))
         # w = (L-m)/L # weight based on smith-waterman
-        w=0
+        w=0.1 if seq1 != seq2 else 0
         return w
     
     @staticmethod

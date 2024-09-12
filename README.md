@@ -60,8 +60,6 @@ panricci --help
 │ docs         Open documentation webpage.                                                │
 │ ricci-flow   apply ricci flow to a graph.                                               │
 ╰─────────────────────────────────────────────────────────────────────────────────────────╯
-
-
 ```
 
 ___ 
