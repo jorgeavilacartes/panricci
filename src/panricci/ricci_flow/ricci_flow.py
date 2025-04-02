@@ -3,15 +3,10 @@ import networkx as nx
 import ot
 
 from typing import Callable, Optional
-# from tqdm import tqdm
-from rich.progress import track as tqdm
+from rich.progress import track
 from pathlib import Path
 
 import logging
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='[Ricci-Flow] %(asctime)s.%(msecs)03d | %(message)s',
-                    datefmt='%Y-%m-%d@%H:%M:%S')
 
 class RicciFlow:
 
@@ -20,18 +15,24 @@ class RicciFlow:
                 distribution: Callable, 
                 dirsave_graphs: Optional[str] = None, overwrite: bool = True, 
                 save_last: bool = True, save_intermediate_graphs: bool=False,
-                tol=1e-11): 
+                tol_curvature=1e-11,
+                log_level: str = "INFO",
+                ): 
         # TODO: include threshold_curvature: float 
         # to stop ricci flow if all curvatures are at most at threshold_curvature from the average curvature
         # it means that is constant
 
+        logging.basicConfig(level=eval(f"logging.{log_level}"),
+                            format='[Ricci-Flow] %(asctime)s.%(msecs)03d | %(message)s',
+                            datefmt='%Y-%m-%d@%H:%M:%S')
+        
         self.G = G
         self.distribution_nodes = distribution # mapping from nodes to its distributions
         self.dirsave = dirsave_graphs
         self.dirsave_graphs = dirsave_graphs
         self.save_last = save_last
         self.save_intermediate_graphs = save_intermediate_graphs
-        self.tol = tol # tolerance of minimum curvature to stop Ricci-Flow when |K(u,v)| < tol for all (u,v) edge of G
+        self.tol = tol_curvature # tolerance of minimum curvature to stop Ricci-Flow when |K(u,v)| < tol for all (u,v) edge of G
  
         self._counter_iters = 0
 
@@ -51,10 +52,10 @@ class RicciFlow:
         name = name if name else "graph"
         
         # compute curvature for all edges in the graph        
-        for it in tqdm(range(iterations), total=iterations, desc="RicciFlow"):
+        for it in track(range(iterations), total=iterations):
             
             self._counter_iters += 1
-            logging.info(f"iteration {self._counter_iters}")
+            logging.debug(f"iteration {self._counter_iters}")
             
             # distances are computed without modify the graph until all edges are used
             new_weights = self.iter_ricci_flow()
@@ -71,14 +72,13 @@ class RicciFlow:
 
             if self.is_curvature_below_tol():
                 logging.info(f"Stopping Ricci-Flow in iteration {it}, all curvatures below tol={self.tol}")
-                print(f"Stopping Ricci-Flow in iteration {it}, all curvatures below tol={self.tol}")
                 break
             
         return self.G
             
     def iter_ricci_flow(self, eps=1):
         "Compute new curvatures, and distances with Ricci Flow"
-        logging.info(f"Ricci-Flow iteration {self._counter_iters}")
+        logging.debug(f"Ricci-Flow iteration {self._counter_iters}")
 
         new_weights = {}
         new_curvatures = {}
@@ -140,7 +140,7 @@ class RicciFlow:
 
         for u,v, data in self.G.edges(data=True):
             if np.abs(data["curvature"]) > self.tol:
-                logging.info(f"curvature of edge K({u},{v}){data['curvature']} is > tol={self.tol}")
+                logging.debug(f"curvature of edge K({u},{v}){data['curvature']} is > tol={self.tol}")
                 return False
         return True
     

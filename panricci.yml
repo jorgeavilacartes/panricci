@@ -10,3 +10,5 @@ dependencies:
     - -e . 
   - ipykernel
   - jupyterlab
+  - matplotlib
+  - seaborn
