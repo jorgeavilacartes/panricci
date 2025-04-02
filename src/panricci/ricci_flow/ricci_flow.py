@@ -3,7 +3,8 @@ import networkx as nx
 import ot
 
 from typing import Callable, Optional
-from tqdm import tqdm
+# from tqdm import tqdm
+from rich.progress import track as tqdm
 from pathlib import Path
 
 import logging

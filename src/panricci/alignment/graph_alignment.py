@@ -16,7 +16,7 @@ from .node_embeddings import (
 )
 
 from .node_embeddings import NodeEmbeddings
-from ..index.embeddings import Index
+# from ..index.embeddings import Index
 
 _Path = Optional[Union[Path, str]]
 
