@@ -42,7 +42,7 @@ app = typer.Typer(name="PanRicci", rich_markup_mode="rich",
 @app.command("ricci-flow", help="apply ricci flow to a graph.")
 def ricci_flow(
     gfa: Annotated[Path, typer.Option("--gfa", "-g", help="Path to the GFA file.")], 
-    iterations: Annotated[int, typer.Option("--iterations", "-i", help="Number of iterations for Ricci-Flow.")],
+    iterations: Annotated[int, typer.Option("--iterations", "-i", help="Maximum number of iterations to run Ricci-Flow.")],
     outdir: Annotated[Path, typer.Option("--outdir", "-o", help="Output directory to save .")] = "output-ricci-flow/ricci-graph", 
     tol_curvature: Annotated[float, typer.Option("--tol-curvature", "-t", help="Tolerance for curvature.")] = 1e-11,
     undirected: Annotated[bool, typer.Option("--undirected", "-u", help="Treat the graph as undirected for Wasserstein distance computation.")] = False,

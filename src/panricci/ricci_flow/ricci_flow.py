@@ -13,9 +13,11 @@ class RicciFlow:
     def __init__(self, 
                 G, 
                 distribution: Callable, 
-                dirsave_graphs: Optional[str] = None, overwrite: bool = True, 
-                save_last: bool = True, save_intermediate_graphs: bool=False,
-                tol_curvature=1e-11,
+                dirsave_graphs: Optional[str] = None, 
+                overwrite: bool = True, 
+                save_last: bool = True, 
+                save_intermediate_graphs: bool=False,
+                tol_curvature = 1e-11,
                 log_level: str = "INFO",
                 ): 
         # TODO: include threshold_curvature: float 
@@ -51,8 +53,9 @@ class RicciFlow:
 
         name = name if name else "graph"
         
-        # compute curvature for all edges in the graph        
-        for it in track(range(iterations), total=iterations):
+        # compute curvature for all edges in the graph       
+        # while not self.is_curvature_below_tol() or self._counter_iters > iterations: 
+        for it in track(range(iterations), total=iterations, description="Ricci-Flow", transient=False):
             
             self._counter_iters += 1
             logging.debug(f"iteration {self._counter_iters}")
@@ -66,7 +69,6 @@ class RicciFlow:
             # update curvature with the current weight 
             for edge in self.G.edges:
                 self.G.edges[edge]["curvature"] = self.compute_curvature(edge)
-                # nx.set_edge_attributes(self.G, new_curvatures)
                        
             self.checkpoints(it, name)
 
@@ -108,21 +110,21 @@ class RicciFlow:
         
         return 1 - W/d
 
-    def wasserstein(self, dist1, dist2):
+    def wasserstein(self, distribution_node1, distribution_node2):
         "compute wasserstein distance between two distributions of nodes"
 
         # 1. extract subgraph containing only the involved nodes in dist1 and dist2 
-        nodes_subgraph = list(dist1.keys()) + list(dist2.keys())
+        nodes_subgraph = list(distribution_node1.keys()) + list(distribution_node2.keys())
         subgraph = self.G.subgraph(nodes_subgraph)
         
         # 2. compute all-vs-all shortest paths in the subgraph
         distances_subgraph = nx.shortest_path(subgraph, weight="weight", method="dijkstra")
         
         # 3. create distance matrix for Optimal Transport
-        M = np.zeros((len(dist1),len(dist2)))
+        M = np.zeros((len(distribution_node1),len(distribution_node2)))
 
-        for i,source in enumerate(dist1.keys()):
-            for j,target in enumerate(dist2.keys()):
+        for i,source in enumerate(distribution_node1.keys()):
+            for j,target in enumerate(distribution_node2.keys()):
                 try:
                     nodes = distances_subgraph[source][target]
                     edges = [(n1,n2) for n1,n2 in zip(nodes[:-1], nodes[1:])]
@@ -132,12 +134,13 @@ class RicciFlow:
         M /= M.max() # rescale costs of matrix to [0,1]
 
         # vector with probabilities
-        a,b=list(dist1.values()), list(dist2.values())
+        a,b=list(distribution_node1.values()), list(distribution_node2.values())
         
+        # return wassersetein distance between the two distributions
         return ot.emd2(a,b,M)
     
     def is_curvature_below_tol(self,):
-
+        "Check if all curvatures are below tol"
         for u,v, data in self.G.edges(data=True):
             if np.abs(data["curvature"]) > self.tol:
                 logging.debug(f"curvature of edge K({u},{v}){data['curvature']} is > tol={self.tol}")
@@ -162,7 +165,6 @@ class RicciFlow:
         weight_init = 1/n_edges
 
         for edge in self.G.edges():
-            # self.G.edges[edge]["curvature"] = self.G.edges[edge].get("curvature",1)
             self.G.edges[edge]["weight"] = self.G.edges[edge].get("weight",weight_init)
 
         for edge in self.G.edges():
