@@ -1,7 +1,3 @@
-import typer
-import logging
-
-
 MARKDOWN = """
 # `panricci` WHAT-TO-DO?   
 - `panricci` is a tool for aligning pangenome graphs (sequence and variation graphs). 
@@ -23,6 +19,10 @@ A step-by-step guide to help you
 3. Align them: are they isomorphic? | `panspace alignment --help`
 """
 
+import typer
+import logging
+from pathlib import Path
+from typing_extensions import Annotated
 # types for typer
 from rich.progress import track
 from rich import print 
@@ -41,75 +41,53 @@ app = typer.Typer(name="PanRicci", rich_markup_mode="rich",
 
 @app.command("ricci-flow", help="apply ricci flow to a graph.")
 def ricci_flow(
-        gfa: str, 
-        iterations: int,
-        undirected: bool = False,
-        sequence_graph: bool = False,
-        prefix_save: str = "output-ricci-flow/ricci-graph", 
+    gfa: Annotated[Path, typer.Option("--gfa", "-g", help="Path to the GFA file.")], 
+    iterations: Annotated[int, typer.Option("--iterations", "-i", help="Maximum number of iterations to run Ricci-Flow.")],
+    outdir: Annotated[Path, typer.Option("--outdir", "-o", help="Output directory to save .")] = "output-ricci-flow/ricci-graph", 
+    tol_curvature: Annotated[float, typer.Option("--tol-curvature", "-t", help="Tolerance for curvature. If all curvatures are smaller than this, then the algorithm stop.")] = 1e-11,
+    undirected: Annotated[bool, typer.Option("--undirected", "-u", help="Treat the graph as undirected for Wasserstein distance computation.")] = False,
+    sequence_graph: Annotated[bool, typer.Option("--sequence-graph", "-s", help="If set, define node distributions as a sequence graph, otherwise use the one for variation graphs (considering paths).")] = False,
     ):
     from pathlib import Path
-    from panricci import RicciFlow
+    from panricci.ricci_flow import RicciFlow
     from panricci.utils import GFALoader
     
     if sequence_graph:
-        from panricci.distributions.sequence_graph import DistributionNodes
+        from panricci.node_distributions.sequence_graph import DistributionNodes
     else:
-        from panricci.distributions.variation_graph import DistributionNodes
+        from panricci.node_distributions.variation_graph import DistributionNodes
     
-    dirsave = Path(prefix_save).parent
-    dirsave.mkdir(exist_ok=True, parents=True)
+    dirsave    = Path(outdir); dirsave.mkdir(exist_ok=True, parents=True)
+    gfa_loader = GFALoader(undirected=undirected)
+
 
     # load graph
-    gfa_loader = GFALoader(undirected=undirected)
     G = gfa_loader(gfa)
 
-    # compute distribution of nodes
+    # compute distribution of nodes of the graph
     distribution = DistributionNodes(G, alpha=0.5)
 
-    # Initialize ricci-flow
+    # run Ricci-Flow
     ricci_flow = RicciFlow(G, 
-                               distribution, 
-                               save_last=False, 
-                               save_intermediate_graphs=True, 
-                               dirsave_graphs=dirsave,
-                               )
-    # ricci_flow = RicciFlow(G, distribution, dirsave_graphs=dirsave, save_last=False, save_intermediate_graphs=True)
-    G_ricci = ricci_flow.run(iterations=iterations, name=Path(prefix_save).stem)
+                    distribution, 
+                    save_last=False, 
+                    save_intermediate_graphs=True, 
+                    dirsave_graphs=dirsave,
+                    tol_curvature=tol_curvature,
+                    )
+
+    G_ricci = ricci_flow.run(iterations=iterations, name=Path(outdir).stem)
 
     return G_ricci
 
-@app.command("alignment", help="Alignment of pangenome graphs.")
-def alignment(
-        gfa1: str,
-        gfa2: str,
-        iterations: int,
-        dirsave: str = "output-ricci-flow/alignment",
-):
-    
-    from pathlib import Path; dirsave=Path(dirsave)
-    dirsave.mkdir(exist_ok=True, parents=True)
-    from panricci.alignment import GraphAlignment, parse_alignment
-
-    g1 = ricci_flow(gfa1, iterations)   
-    g2 = ricci_flow(gfa2, iterations)
-
-    aligner = GraphAlignment(
-    ricci_embedding = True, 
-    seq_embedding = False, ) # kmer_size=4)
-    alignment = aligner(g1, g2, name="alignment") 
-
-    parse_alignment(alignment, g1, g2).\
-    sort_values(by="cost_alignment").\
-    to_csv(dirsave.joinpath(f"alignment-{Path(gfa1).stem}-{Path(gfa2).stem}.tsv"),sep="\t")
-
 @app.command("align", help="Alignment of ricci graphs.")
 def align(
-        ricci1: str,
-        ricci2: str,
-        path_save: str = "output-ricci-flow/align/ricci1-ricci2.tsv",
-        metadata_nodes: bool = False,
-        gfa1: str = None,
-        gfa2: str = None, 
+    ricci_graph1: Annotated[Path, typer.Option("--ricci-graph1", "-r1", help="Path to the first Ricci graph file.")],
+    ricci_graph2: Annotated[Path, typer.Option("--ricci-graph2", "-r2", help="Path to the second Ricci graph file.")],
+    path_save: Annotated[Path, typer.Option("--path-save", "-p", help="Path to save the alignment results. Default: 'output-ricci-flow/align/ricci1-ricci2.tsv'.")] = "output-ricci-flow/align/ricci1-ricci2.tsv",
+    # metadata_nodes: Annotated[bool, typer.Option("--metadata-nodes", "-m", help="Include metadata for nodes in the alignment, in which case --gfa1 and --gfa2 must be provided")] = False,
+    # gfa1: Annotated[str, typer.Option("--gfa1", "-g1", help="Path to the first GFA file. Required if metadata-nodes is set.")] = None,
+    # gfa2: Annotated[str, typer.Option("--gfa2", "-g2", help="Path to the second GFA file. Required if metadata-nodes is set.")] = None, 
 ):
     
     from pathlib import Path
@@ -123,12 +101,12 @@ def align(
     dirsave.parent.mkdir(exist_ok=True, parents=True)
 
     # add weights to graphs
-    g1 = nx.read_edgelist(ricci1, data=True, create_using=nx.DiGraph) # DiGraph to find source and sinks nodes   
-    g2 = nx.read_edgelist(ricci2, data=True, create_using=nx.DiGraph) # Otherwise, provide source and sinks nodes (TODO)
+    g1 = nx.read_edgelist(ricci_graph1, data=True, create_using=nx.DiGraph) # DiGraph to find source and sinks nodes   
+    g2 = nx.read_edgelist(ricci_graph2, data=True, create_using=nx.DiGraph) # Otherwise, provide source and sinks nodes (TODO)
 
     aligner = GraphAlignment(
-    ricci_embedding = True, 
-    seq_embedding = False, ) # kmer_size=4)
+                ricci_embedding = True, 
+                seq_embedding = False, ) # kmer_size=4)
     alignment = aligner(g1, g2, name="alignment") 
 
     # load pangenome graphs with node info, and add the weight
@@ -150,8 +128,6 @@ def align(
     parse_alignment(alignment, graph1, graph2).\
     sort_values(by="cost_alignment").\
     to_csv(dirsave,sep="\t")
-
-
 
 
 if __name__ == "__main__":

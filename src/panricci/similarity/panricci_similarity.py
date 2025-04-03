@@ -2,11 +2,11 @@ import numpy as np
 import networkx as nx
 from pathlib import Path
 
-from .ricci_flow import RicciFlow
-from .distributions.variation_graph import DistributionNodes
-from .utils.gfa_loader import GFALoader
-from .utils.get_source_sink_from_gfa import get_sources_sinks
-from .alignment.graph_alignment import GraphAlignment
+from ..ricci_flow import RicciFlow
+from ..node_distributions.variation_graph import DistributionNodes
+from ..utils.gfa_loader import GFALoader
+from ..utils.get_source_sink_from_gfa import get_sources_sinks
+from ..alignment.graph_alignment import GraphAlignment
 
 import logging 
 logger = logging.getLogger(name = "PanRicciSimilarity")

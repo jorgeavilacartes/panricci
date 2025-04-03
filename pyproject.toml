@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "panricci"
+dynamic = ["version"]
+description = "Alignment of pangenome graphs with Ricci-Flow"
+authors = [
+    { name = "Jorge Avila Cartes", email = "jorgeavilacartes@gmail.com" },
+]
+readme = "README.md"
+license = { file = "LICENSE" }
+keywords = ["pangenome", "graph", "variation graph", "sequence graph", "alignment", "ricci-flow"]
+classifiers = [
+    "Intended Audience :: Bioinformaticians",
+    "Programming Language :: Python",
+]
+dependencies = [
+    "typer",
+    "rich",
+    "rich-argparse",
+    "pot>=0.9.1",
+    "networkx>=3.2.1",
+    "numpy",
+    "pandas",
+]
+
+[project.scripts]
+panricci = "panricci.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["panricci"]
+exclude = ["tests*","notebooks*","data*","envs"]

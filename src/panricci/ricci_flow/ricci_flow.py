@@ -3,34 +3,38 @@ import networkx as nx
 import ot
 
 from typing import Callable, Optional
-from tqdm import tqdm
+from rich.progress import track
 from pathlib import Path
 
 import logging
-
-logging.basicConfig(level=logging.DEBUG,
-                    format='[Ricci-Flow] %(asctime)s.%(msecs)03d | %(message)s',
-                    datefmt='%Y-%m-%d@%H:%M:%S')
 
 class RicciFlow:
 
     def __init__(self, 
                 G, 
                 distribution: Callable, 
-                dirsave_graphs: Optional[str] = None, overwrite: bool = True, 
-                save_last: bool = True, save_intermediate_graphs: bool=False,
-                tol=1e-11): 
+                dirsave_graphs: Optional[str] = None, 
+                overwrite: bool = True, 
+                save_last: bool = True, 
+                save_intermediate_graphs: bool=False,
+                tol_curvature = 1e-11,
+                log_level: str = "INFO",
+                ): 
         # TODO: include threshold_curvature: float 
         # to stop ricci flow if all curvatures are at most at threshold_curvature from the average curvature
         # it means that is constant
 
+        logging.basicConfig(level=eval(f"logging.{log_level}"),
+                            format='[Ricci-Flow] %(asctime)s.%(msecs)03d | %(message)s',
+                            datefmt='%Y-%m-%d@%H:%M:%S')
+        
         self.G = G
         self.distribution_nodes = distribution # mapping from nodes to its distributions
         self.dirsave = dirsave_graphs
         self.dirsave_graphs = dirsave_graphs
         self.save_last = save_last
         self.save_intermediate_graphs = save_intermediate_graphs
-        self.tol = tol # tolerance of minimum curvature to stop Ricci-Flow when |K(u,v)| < tol for all (u,v) edge of G
+        self.tol = tol_curvature # tolerance of minimum curvature to stop Ricci-Flow when |K(u,v)| < tol for all (u,v) edge of G
  
         self._counter_iters = 0
 
@@ -49,11 +53,12 @@ class RicciFlow:
 
         name = name if name else "graph"
         
-        # compute curvature for all edges in the graph        
-        for it in tqdm(range(iterations), total=iterations, desc="RicciFlow"):
+        # compute curvature for all edges in the graph       
+        # while not self.is_curvature_below_tol() or self._counter_iters > iterations: 
+        for it in track(range(iterations), total=iterations, description="Ricci-Flow", transient=False):
             
             self._counter_iters += 1
-            logging.info(f"iteration {self._counter_iters}")
+            logging.debug(f"iteration {self._counter_iters}")
             
             # distances are computed without modify the graph until all edges are used
             new_weights = self.iter_ricci_flow()
@@ -64,20 +69,18 @@ class RicciFlow:
             # update curvature with the current weight 
             for edge in self.G.edges:
                 self.G.edges[edge]["curvature"] = self.compute_curvature(edge)
-                # nx.set_edge_attributes(self.G, new_curvatures)
                        
             self.checkpoints(it, name)
 
             if self.is_curvature_below_tol():
                 logging.info(f"Stopping Ricci-Flow in iteration {it}, all curvatures below tol={self.tol}")
-                print(f"Stopping Ricci-Flow in iteration {it}, all curvatures below tol={self.tol}")
                 break
             
         return self.G
             
     def iter_ricci_flow(self, eps=1):
         "Compute new curvatures, and distances with Ricci Flow"
-        logging.info(f"Ricci-Flow iteration {self._counter_iters}")
+        logging.debug(f"Ricci-Flow iteration {self._counter_iters}")
 
         new_weights = {}
         new_curvatures = {}
@@ -107,21 +110,21 @@ class RicciFlow:
         
         return 1 - W/d
 
-    def wasserstein(self, dist1, dist2):
+    def wasserstein(self, distribution_node1, distribution_node2):
         "compute wasserstein distance between two distributions of nodes"
 
         # 1. extract subgraph containing only the involved nodes in dist1 and dist2 
-        nodes_subgraph = list(dist1.keys()) + list(dist2.keys())
+        nodes_subgraph = list(distribution_node1.keys()) + list(distribution_node2.keys())
         subgraph = self.G.subgraph(nodes_subgraph)
         
         # 2. compute all-vs-all shortest paths in the subgraph
         distances_subgraph = nx.shortest_path(subgraph, weight="weight", method="dijkstra")
         
         # 3. create distance matrix for Optimal Transport
-        M = np.zeros((len(dist1),len(dist2)))
+        M = np.zeros((len(distribution_node1),len(distribution_node2)))
 
-        for i,source in enumerate(dist1.keys()):
-            for j,target in enumerate(dist2.keys()):
+        for i,source in enumerate(distribution_node1.keys()):
+            for j,target in enumerate(distribution_node2.keys()):
                 try:
                     nodes = distances_subgraph[source][target]
                     edges = [(n1,n2) for n1,n2 in zip(nodes[:-1], nodes[1:])]
@@ -131,15 +134,16 @@ class RicciFlow:
         M /= M.max() # rescale costs of matrix to [0,1]
 
         # vector with probabilities
-        a,b=list(dist1.values()), list(dist2.values())
+        a,b=list(distribution_node1.values()), list(distribution_node2.values())
         
+        # return wassersetein distance between the two distributions
         return ot.emd2(a,b,M)
     
     def is_curvature_below_tol(self,):
-
+        "Check if all curvatures are below tol"
         for u,v, data in self.G.edges(data=True):
             if np.abs(data["curvature"]) > self.tol:
-                logging.info(f"curvature of edge K({u},{v}){data['curvature']} is > tol={self.tol}")
+                logging.debug(f"curvature of edge K({u},{v}){data['curvature']} is > tol={self.tol}")
                 return False
         return True
     
@@ -161,7 +165,6 @@ class RicciFlow:
         weight_init = 1/n_edges
 
         for edge in self.G.edges():
-            # self.G.edges[edge]["curvature"] = self.G.edges[edge].get("curvature",1)
             self.G.edges[edge]["weight"] = self.G.edges[edge].get("weight",weight_init)
 
         for edge in self.G.edges():
