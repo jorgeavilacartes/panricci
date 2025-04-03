@@ -85,9 +85,9 @@ def align(
     ricci_graph1: Annotated[Path, typer.Option("--ricci-graph1", "-r1", help="Path to the first Ricci graph file.")],
     ricci_graph2: Annotated[Path, typer.Option("--ricci-graph2", "-r2", help="Path to the second Ricci graph file.")],
     path_save: Annotated[Path, typer.Option("--path-save", "-p", help="Path to save the alignment results. Default: 'output-ricci-flow/align/ricci1-ricci2.tsv'.")] = "output-ricci-flow/align/ricci1-ricci2.tsv",
-    # metadata_nodes: Annotated[bool, typer.Option("--metadata-nodes", "-m", help="Include metadata for nodes in the alignment, in which case --gfa1 and --gfa2 must be provided")] = False,
-    # gfa1: Annotated[str, typer.Option("--gfa1", "-g1", help="Path to the first GFA file. Required if metadata-nodes is set.")] = None,
-    # gfa2: Annotated[str, typer.Option("--gfa2", "-g2", help="Path to the second GFA file. Required if metadata-nodes is set.")] = None, 
+    metadata_nodes: Annotated[bool, typer.Option("--metadata-nodes", "-m", help="Include metadata for nodes in the alignment, in which case --gfa1 and --gfa2 must be provided")] = False,
+    gfa1: Annotated[str, typer.Option("--gfa1", "-g1", help="Path to the first GFA file. Required if metadata-nodes is set.")] = None,
+    gfa2: Annotated[str, typer.Option("--gfa2", "-g2", help="Path to the second GFA file. Required if metadata-nodes is set.")] = None, 
 ):
     
     from pathlib import Path
@@ -114,13 +114,13 @@ def align(
         gfa_loader = GFALoader(undirected=False)
         graph1 = gfa_loader(gfa1)
         for edge, d in g1.edges.items():
-            graph1.edges[edge]["weight"] = edge["weight"]
-            graph1.edges[edge]["curvature"] = edge["curvature"]
+            graph1.edges[edge]["weight"] = d["weight"]
+            graph1.edges[edge]["curvature"] = d["curvature"]
 
         graph2 = gfa_loader(gfa2)
         for edge, d in g2.edges.items():
-            graph2.edges[edge]["weight"] = edge["weight"]
-            graph2.edges[edge]["curvature"] = edge["curvature"]
+            graph2.edges[edge]["weight"] = d["weight"]
+            graph2.edges[edge]["curvature"] = d["curvature"]
     else:
         graph1 = g1 
         graph2 = g2

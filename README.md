@@ -102,3 +102,20 @@ the columns,
 
 
 as we can see from this result, the first row says that node 4 of the graph1 was aligned to node 4 of graph2, with a cost alignment of 0, which means that they have the same relative node representation.
+
+
+Additionally, you can ask to add node metadata (label and node depth) to the output by providing the original .gfa files as follows
+
+```bash
+$ panricci align --ricci-graph1 output/test5/test5-ricciflow-52.edgelist --ricci-graph2 output/test5/test5-ricciflow-52.edgelist --path-save output/alignment.csv --node-metadata --gfa1  data/test5.gfa --gfa2 data/test5.gfa
+```
+
+The output should look like this
+
+```bash
+ 	 edge          	 cost_alignment	 node1	 node2	 label1      	 label2      	 node_depth1	 node_depth2
+0	 ['4-1', '4-2']	            0.0	     4	     4	 CAACGTTTTTTT	 CAACGTTTTTTT	         0.5	         0.5
+1	 ['3-1', '3-2']	            0.0	     3	     3	 CTAGA       	 CTAGA       	         1.0	         1.0
+2	 ['2-1', '2-2']	            0.0	     2	     2	 A           	 A           	         0.5	         0.5
+3	 ['1-1', '1-2']	            0.0	     1	     1	 C           	 C           	         1.0	         1.0
+```
