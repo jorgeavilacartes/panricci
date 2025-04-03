@@ -80,7 +80,10 @@ You can either create the ricci graph for another gfa in the folder, or we can u
 Notice that in the `output/test5` folder you will find a lot (one for each iteration), we will take the last one, which should be the file `test5-ricciflow-52.edgelist`
 
 ```bash
-$ panricci align --ricci-graph1 output/test5/test5-ricciflow-52.edgelist --ricci-graph2 output/test5/test5-ricciflow-52.edgelist --path-save output/alignment.csv
+$ panricci align \
+	--ricci-graph1 output/test5/test5-ricciflow-52.edgelist \
+	--ricci-graph2 output/test5/test5-ricciflow-52.edgelist \
+	--path-save output/alignment.tsv
 ```
 
 you should get a csv file with the following information inside
@@ -107,7 +110,13 @@ as we can see from this result, the first row says that node 4 of the graph1 was
 Additionally, you can ask to add node metadata (label and node depth) to the output by providing the original .gfa files as follows
 
 ```bash
-$ panricci align --ricci-graph1 output/test5/test5-ricciflow-52.edgelist --ricci-graph2 output/test5/test5-ricciflow-52.edgelist --path-save output/alignment.csv --node-metadata --gfa1  data/test5.gfa --gfa2 data/test5.gfa
+$ panricci align \
+	--ricci-graph1 output/test5/test5-ricciflow-52.edgelist \
+	--ricci-graph2 output/test5/test5-ricciflow-52.edgelist \
+	--path-save output/alignment.tsv \
+	--node-metadata \
+	--gfa1  data/test5.gfa \
+	--gfa2 data/test5.gfa
 ```
 
 The output should look like this
