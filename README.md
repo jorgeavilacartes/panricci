@@ -6,7 +6,7 @@
 
 ## Installation
 ```bash
-pip install https://github.com/jorgeavilacartes/panricci.git
+pip install git+https://github.com/jorgeavilacartes/panricci.git
 ```
 
 or (recommended for developer) create a conda environment with the library in edition mode
