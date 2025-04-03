@@ -31,11 +31,7 @@ of curvature of edges to modify its weights until the curvature is constant (equ
 Once the graph reach the state of constant curvature, we can use it to perform alignment of two graphs
 by definining coordinates with respect to source and sink nodes in our (directed) pangenome graphs.
 
-**NOTE** Each pangenome graph (input file, and manifold) is assumed to be one single connected component.  
-
-Developer note: This will install `panricci` as a pip library in editable mode.
-**NOTE** If changes are not recognized, reinstall library with the pevious command.
-
+**NOTE** Each pangenome graph (input file, and manifold) is assumed to be one single connected component.
 ___
 ## CLI
 `panricci` works with pangenome graphs (variation graphs or sequence graphs) in `.gfa` format.
@@ -77,6 +73,7 @@ $ panricci ricci-flow --gfa data/test5.gfa --iterations 1000 --tol-curvature 1e-
 - by default node distributions are defined for a variation graph, i.e. paths are considered. If you have a sequence graph, where paths are not part of the .gfa file, then you can add the option `--sequence-graph` 
 
 #### 2. Align ricci-graphs
+The **alignment** consists on finding a mapping **between nodes of two graphs**.
 
 You can either create the ricci graph for another gfa in the folder, or we can use the same ricci graph to be align against itself, which we will do now.
 
