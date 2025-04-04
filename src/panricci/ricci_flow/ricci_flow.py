@@ -149,7 +149,7 @@ class RicciFlow:
 
         if self.save_last:
             # save last graph with attributes on its edges
-            path_save = self.dirsave.joinpath("{name}-ricciflow.edgelist")
+            path_save = self.dirsave.joinpath(f"{name}-ricciflow.edgelist")
             nx.write_edgelist(self.G, path_save, data=True)
 
     def initialize_edges(self,):

@@ -48,6 +48,7 @@ def ricci_flow(
     undirected: Annotated[bool, typer.Option("--undirected", "-u", help="Treat the graph as undirected for Wasserstein distance computation.")] = False,
     sequence_graph: Annotated[bool, typer.Option("--sequence-graph", "-s", help="If set, define node distributions as a sequence graph, otherwise use the one for variation graphs (considering paths).")] = False,
     log_level: Annotated[str, typer.Option("--log-level", "-l", help="Log level. Default: INFO.")] = "INFO",
+    save_intermediate_graphs: Annotated[bool, typer.Option("--save-intermediate-graphs", "-si", help="Save intermediate graphs.")] = False,
     ):
     from pathlib import Path
     from panricci.ricci_flow import RicciFlow
@@ -70,8 +71,8 @@ def ricci_flow(
     # run Ricci-Flow
     ricci_flow = RicciFlow(G, 
                     distribution, 
-                    save_last=False, 
-                    save_intermediate_graphs=True, 
+                    save_last=True, 
+                    save_intermediate_graphs=save_intermediate_graphs, 
                     dirsave_graphs=dirsave,
                     tol_curvature=tol_curvature,
                     log_level=log_level,
