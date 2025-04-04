@@ -95,7 +95,6 @@ def align(
 
     from panricci.utils import GFALoader
     from panricci.alignment import GraphAlignment, parse_alignment
-    from panricci.utils import GFALoader
 
     dirsave=Path(path_save)
     dirsave.parent.mkdir(exist_ok=True, parents=True)

@@ -128,3 +128,70 @@ The output should look like this
 2	 ['2-1', '2-2']	            0.0	     2	     2	 A           	 A           	         0.5	         0.5
 3	 ['1-1', '1-2']	            0.0	     1	     1	 C           	 C           	         1.0	         1.0
 ```
+
+
+## Python API
+
+#### 1. Create ricci-graphs
+```python
+from panricci.ricci_flow import RicciFlow
+from panricci.utils import GFALoader
+from panricci.node_distributions.variation_graph import DistributionNodes
+
+# load variation graph
+G = gfa_loader(gfa)
+
+# compute distribution for each node of the graph
+distribution_nodes = DistributionNodes(G, alpha=0.5)
+
+# Initialize Ricci-Flow
+ricci_flow = RicciFlow(G, 
+				distribution=distribution_nodes, # the distribution over the 1-hop neighborhood for each node in the graph
+				save_last=False,                 # will overwrite the results in each iteration to keep the last one: outfile will be "{name}-ricciflow-{it}.edgelist"
+				save_intermediate_graphs=True,   # will save results for all iteration: outfile will be "{name}-ricciflow.edgelist"
+				dirsave_graphs="outdir",         # directory to save results
+				tol_curvature=1e-15,             # tolerance of minimum curvature to stop Ricci-Flow
+				overwrite=False,                 # If the dirsave_graphs directory exists, it will raise an Exception
+				)
+
+# apply Ricci-Flow
+G_ricci = ricci_flow.run(
+					iterations=1000,       # maximum number of iterations to run Ricci-Flow  
+					name="id-graph"        # some identifier to store results
+					)
+``` 
+
+#### 2. Align ricci-graphs
+
+```python
+from pathlib import Path
+import networkx as nx
+
+from panricci.utils import GFALoader
+from panricci.alignment import GraphAlignment, parse_alignment
+
+dirsave=Path(path_save)
+dirsave.parent.mkdir(exist_ok=True, parents=True)
+
+# add weights to graphs
+g1 = nx.read_edgelist(ricci_graph1, data=True, create_using=nx.DiGraph) # DiGraph to find source and sinks nodes   
+g2 = nx.read_edgelist(ricci_graph2, data=True, create_using=nx.DiGraph) # Otherwise, provide source and sinks nodes (TODO)
+
+aligner = GraphAlignment()
+alignment = aligner(g1, g2, name="alignment") 
+
+# create dataframe with alignment info and node metadata (labels and )
+# load pangenome graphs with node info, and add the weight
+gfa_loader = GFALoader(undirected=False)
+graph1 = gfa_loader(gfa1)
+for edge, d in g1.edges.items():
+	graph1.edges[edge]["weight"] = d["weight"]
+	graph1.edges[edge]["curvature"] = d["curvature"]
+
+graph2 = gfa_loader(gfa2)
+for edge, d in g2.edges.items():
+	graph2.edges[edge]["weight"] = d["weight"]
+	graph2.edges[edge]["curvature"] = d["curvature"]
+
+df_alignment = parse_alignment(alignment, graph1, graph2)
+```

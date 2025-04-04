@@ -20,10 +20,6 @@ class RicciFlow:
                 tol_curvature = 1e-11,
                 log_level: str = "INFO",
                 ): 
-        # TODO: include threshold_curvature: float 
-        # to stop ricci flow if all curvatures are at most at threshold_curvature from the average curvature
-        # it means that is constant
-
         logging.basicConfig(level=eval(f"logging.{log_level}"),
                             format='[Ricci-Flow] %(asctime)s.%(msecs)03d | %(message)s',
                             datefmt='%Y-%m-%d@%H:%M:%S')
@@ -31,7 +27,6 @@ class RicciFlow:
         self.G = G
         self.distribution_nodes = distribution # mapping from nodes to its distributions
         self.dirsave = dirsave_graphs
-        self.dirsave_graphs = dirsave_graphs
         self.save_last = save_last
         self.save_intermediate_graphs = save_intermediate_graphs
         self.tol = tol_curvature # tolerance of minimum curvature to stop Ricci-Flow when |K(u,v)| < tol for all (u,v) edge of G
@@ -53,8 +48,7 @@ class RicciFlow:
 
         name = name if name else "graph"
         
-        # compute curvature for all edges in the graph       
-        # while not self.is_curvature_below_tol() or self._counter_iters > iterations: 
+        # compute curvature for all edges in the graph
         for it in track(range(iterations), total=iterations, description="Ricci-Flow", transient=False):
             
             self._counter_iters += 1
@@ -95,7 +89,6 @@ class RicciFlow:
             new_weight = current_weight - eps*current_curvature*current_weight
             
             new_weights[edge] = {"weight": new_weight}
-            # new_curvatures[edge] = {"curvature": current_curvature}
 
         return new_weights
             

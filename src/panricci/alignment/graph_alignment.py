@@ -32,14 +32,15 @@ class GraphAlignment:
     and the cost of each one of them. 
     """
 
-    def __init__(self, threshold_alignment: float = 1e5, 
+    def __init__(self,  
                  dirsave: Optional[_Path] = None,
                  ricci_embedding = True,
                  seq_embedding = False,
                  kmer_size = 1,
-                 max_len: Optional[int] = None, 
+                 max_len: Optional[int] = None,
+                 threshold_alignment: float = 1e5, 
                  ):
-        self.threshold_alignment = threshold_alignment
+        self.threshold_alignment = threshold_alignment # maximum cost allowed for the alignment (only used to filter final results)
         
         # node features
         self.ricci_embedding = ricci_embedding
@@ -134,7 +135,7 @@ class GraphAlignment:
         return bipartite_graph
          
     @staticmethod
-    def compute_cost_labels(seq1, seq2,):
+    def compute_cost_labels(seq1, seq2, penalization=0.1):
         # TODO: use EDIT distance
         # https://pypi.org/project/editdistance/
         # https://pypi.org/project/python-Levenshtein/
@@ -143,8 +144,7 @@ class GraphAlignment:
         # m = result.matches
         # L = max(len(seq1),len(seq2))
         # w = (L-m)/L # weight based on smith-waterman
-        w=0.1 if seq1 != seq2 else 0
-        return w
+        return penalization if seq1 != seq2 else 0
     
     @staticmethod
     def compute_cost_embeddings(emb1, emb2):
