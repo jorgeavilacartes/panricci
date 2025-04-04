@@ -139,6 +139,7 @@ from panricci.utils import GFALoader
 from panricci.node_distributions.variation_graph import DistributionNodes
 
 # load variation graph
+gfa_loader = GFALoader(undirected=False)
 G = gfa_loader(gfa)
 
 # compute distribution for each node of the graph
@@ -146,19 +147,19 @@ distribution_nodes = DistributionNodes(G, alpha=0.5)
 
 # Initialize Ricci-Flow
 ricci_flow = RicciFlow(G, 
-				distribution=distribution_nodes, # the distribution over the 1-hop neighborhood for each node in the graph
-				save_last=False,                 # will overwrite the results in each iteration to keep the last one: outfile will be "{name}-ricciflow-{it}.edgelist"
-				save_intermediate_graphs=True,   # will save results for all iteration: outfile will be "{name}-ricciflow.edgelist"
-				dirsave_graphs="outdir",         # directory to save results
-				tol_curvature=1e-15,             # tolerance of minimum curvature to stop Ricci-Flow
-				overwrite=False,                 # If the dirsave_graphs directory exists, it will raise an Exception
-				)
+	distribution=distribution_nodes, # the distribution over the 1-hop neighborhood for each node in the graph
+	save_last=False,                 # will overwrite the results in each iteration to keep the last one: outfile will be "{name}-ricciflow-{it}.edgelist"
+	save_intermediate_graphs=True,   # will save results for all iteration: outfile will be "{name}-ricciflow.edgelist"
+	dirsave_graphs="outdir",         # directory to save results
+	tol_curvature=1e-15,             # tolerance of minimum curvature to stop Ricci-Flow
+	overwrite=False,                 # If the dirsave_graphs directory exists, it will raise an Exception
+	)
 
 # apply Ricci-Flow
 G_ricci = ricci_flow.run(
-					iterations=1000,       # maximum number of iterations to run Ricci-Flow  
-					name="id-graph"        # some identifier to store results
-					)
+	iterations=1000,       # maximum number of iterations to run Ricci-Flow  
+	name="id-graph"        # some identifier to store results
+	)
 ``` 
 
 #### 2. Align ricci-graphs

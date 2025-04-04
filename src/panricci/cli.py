@@ -47,6 +47,7 @@ def ricci_flow(
     tol_curvature: Annotated[float, typer.Option("--tol-curvature", "-t", help="Tolerance for curvature. If all curvatures are smaller than this, then the algorithm stop.")] = 1e-11,
     undirected: Annotated[bool, typer.Option("--undirected", "-u", help="Treat the graph as undirected for Wasserstein distance computation.")] = False,
     sequence_graph: Annotated[bool, typer.Option("--sequence-graph", "-s", help="If set, define node distributions as a sequence graph, otherwise use the one for variation graphs (considering paths).")] = False,
+    log_level: Annotated[str, typer.Option("--log-level", "-l", help="Log level. Default: INFO.")] = "INFO",
     ):
     from pathlib import Path
     from panricci.ricci_flow import RicciFlow
@@ -59,7 +60,6 @@ def ricci_flow(
     
     dirsave    = Path(outdir); dirsave.mkdir(exist_ok=True, parents=True)
     gfa_loader = GFALoader(undirected=undirected)
-
 
     # load graph
     G = gfa_loader(gfa)
@@ -74,6 +74,7 @@ def ricci_flow(
                     save_intermediate_graphs=True, 
                     dirsave_graphs=dirsave,
                     tol_curvature=tol_curvature,
+                    log_level=log_level,
                     )
 
     G_ricci = ricci_flow.run(iterations=iterations, name=Path(outdir).stem)
@@ -88,6 +89,8 @@ def align(
     metadata_nodes: Annotated[bool, typer.Option("--metadata-nodes", "-m", help="Include metadata for nodes in the alignment, in which case --gfa1 and --gfa2 must be provided")] = False,
     gfa1: Annotated[str, typer.Option("--gfa1", "-g1", help="Path to the first GFA file. Required if metadata-nodes is set.")] = None,
     gfa2: Annotated[str, typer.Option("--gfa2", "-g2", help="Path to the second GFA file. Required if metadata-nodes is set.")] = None, 
+    weight_node_labels: Annotated[float, typer.Option("--weight-node-labels", "-w", min=0, max=0.99, help="Weight for node labels in the alignment cost function. Default: 0.0.")] = 0.0,
+    log_level: Annotated[str, typer.Option("--log-level", "-l", help="Log level. Default: INFO.")] = "INFO",
 ):
     
     from pathlib import Path
@@ -105,7 +108,9 @@ def align(
 
     aligner = GraphAlignment(
                 ricci_embedding = True, 
-                seq_embedding = False, ) # kmer_size=4)
+                weight_node_labels = weight_node_labels,
+                log_level = log_level,
+                ) 
     alignment = aligner(g1, g2, name="alignment") 
 
     # load pangenome graphs with node info, and add the weight

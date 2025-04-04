@@ -97,8 +97,22 @@ def compute_node_embeddings(G, sp_from_source, sp_until_sink):
 
 class NodeEmbeddings:
 
-    def __init__(self, ricci_embedding=True, seq_embedding=False, kmer_size: Optional[int]=None, max_len: Optional[int]= None):
+    def __init__(self, 
+                 ricci_embedding=True, 
+                 seq_embedding=False,
+                 kmer_size: Optional[int]=None, 
+                 max_len: Optional[int]= None
+                 ):
+
+        # ricci embedding: weights from Ricci Flow
+        if not ricci_embedding and not seq_embedding:
+            raise ValueError("At least one of ricci_embedding or seq_embedding must be True")
         self.ricci_embedding = ricci_embedding
+
+        # options for sequence embeddings
+        if seq_embedding and kmer_size is None and max_len is None:
+            raise ValueError("kmer_size and max_len must be provided if seq_embedding is True")
+
         self.seq_embedding = seq_embedding
         self.kmer_size = kmer_size
         self.max_len = max_len
@@ -115,11 +129,7 @@ class NodeEmbeddings:
             seq_emb = compute_prefix_suffix_feature(G_copy, sp_from_source, sp_until_sink, kmer_size=self.kmer_size, max_len=self.max_len)
         
         if self.ricci_embedding and self.seq_embedding:
-            emb = dict()
             G_copy.remove_nodes_from(["source","sink"])
-            # for node in G_copy.nodes():
-            #     emb[node] = np.concatenate([ricci_emb[node], seq_emb[node]]) 
-            # return emb 
             return {node: np.concatenate([ricci_emb[node], seq_emb[node]]) for node in G_copy.nodes()}
         elif self.ricci_embedding:
             return ricci_emb
