@@ -31,7 +31,7 @@ def parse_alignment(alignment, graph1, graph2):
                 label1=info1.get("label"),
                 label2=info2.get("label"),
                 node_depth1=info1.get("node_depth"),
-                node_depth2=info1.get("node_depth"),
+                node_depth2=info2.get("node_depth"),
             )
         )
 
