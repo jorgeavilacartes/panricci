@@ -87,10 +87,9 @@ def align(
     ricci_graph1: Annotated[Path, typer.Option("--ricci-graph1", "-r1", help="Path to the first Ricci graph file.")],
     ricci_graph2: Annotated[Path, typer.Option("--ricci-graph2", "-r2", help="Path to the second Ricci graph file.")],
     path_save: Annotated[Path, typer.Option("--path-save", "-p", help="Path to save the alignment results. Default: 'output-ricci-flow/align/ricci1-ricci2.tsv'.")] = "output-ricci-flow/align/ricci1-ricci2.tsv",
-    metadata_nodes: Annotated[bool, typer.Option("--metadata-nodes", "-m", help="Include metadata for nodes in the alignment, in which case --gfa1 and --gfa2 must be provided")] = False,
+    weight_node_labels: Annotated[float, typer.Option("--weight-node-labels", "-w", min=0, max=0.99, help="Weight for node labels in the alignment cost function. Default: 0. If > 0 then --gfa1 and --gfa2 must be provided")] = 0.0,
     gfa1: Annotated[str, typer.Option("--gfa1", "-g1", help="Path to the first GFA file. Required if metadata-nodes is set.")] = None,
     gfa2: Annotated[str, typer.Option("--gfa2", "-g2", help="Path to the second GFA file. Required if metadata-nodes is set.")] = None, 
-    weight_node_labels: Annotated[float, typer.Option("--weight-node-labels", "-w", min=0, max=0.99, help="Weight for node labels in the alignment cost function. Default: 0.0.")] = 0.0,
     log_level: Annotated[str, typer.Option("--log-level", "-l", help="Log level. Default: INFO.")] = "INFO",
     store_bipartite: Annotated[bool, typer.Option("--store-bipartite", "-sb", help="Store the bipartite graph used for alignment.")] = False,
 ):
@@ -117,7 +116,7 @@ def align(
     g2 = nx.read_edgelist(ricci_graph2, data=True, create_using=nx.DiGraph) # Otherwise, provide source and sinks nodes (TODO)
 
     # add weights to graphs
-    if metadata_nodes:
+    if gfa1 and gfa2:
         gfa_loader = GFALoader(undirected=False)
         graph1 = gfa_loader(gfa1)
         for edge, d in g1.edges.items():

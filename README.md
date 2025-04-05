@@ -114,7 +114,6 @@ $ panricci align \
 	--ricci-graph1 output/test5/test5-ricciflow-52.edgelist \
 	--ricci-graph2 output/test5/test5-ricciflow-52.edgelist \
 	--path-save output/alignment.tsv \
-	--node-metadata \
 	--gfa1  data/test5.gfa \
 	--gfa2 data/test5.gfa
 ```
@@ -127,6 +126,20 @@ The output should look like this
 1	 ['3-1', '3-2']	            0.0	     3	     3	 CTAGA       	 CTAGA       	         1.0	         1.0
 2	 ['2-1', '2-2']	            0.0	     2	     2	 A           	 A           	         0.5	         0.5
 3	 ['1-1', '1-2']	            0.0	     1	     1	 C           	 C           	         1.0	         1.0
+```
+
+The **cost of alinging two nodes** is the euclidean distance between the relative node representation of each node w.r.t. source and sink nodes in the graph.
+There is the option of including as well a cost that penalizes nodes with different labels
+
+
+```bash
+$ panricci align \
+	--ricci-graph1 output/test5/test5-ricciflow-52.edgelist \
+	--ricci-graph2 output/test5/test5-ricciflow-52.edgelist \
+	--path-save output/alignment.tsv \
+	--weight-node-labels 0.5 \
+	--gfa1  data/test5.gfa \
+	--gfa2 data/test5.gfa
 ```
 
 
@@ -174,15 +187,17 @@ from panricci.alignment import GraphAlignment, parse_alignment
 dirsave=Path(path_save)
 dirsave.parent.mkdir(exist_ok=True, parents=True)
 
-# add weights to graphs
-g1 = nx.read_edgelist(ricci_graph1, data=True, create_using=nx.DiGraph) # DiGraph to find source and sinks nodes   
-g2 = nx.read_edgelist(ricci_graph2, data=True, create_using=nx.DiGraph) # Otherwise, provide source and sinks nodes (TODO)
+# initialize aligner
+aligner = GraphAlignment(
+	ricci_embedding = True, 
+	weight_node_labels = 0.5,    # set to 0 if you only want to consider embedding cost
+	path_save_bipartite = "bipartite-graph.edgelist", # store bipartite graph used for alignment
+	) 
 
-aligner = GraphAlignment()
-alignment = aligner(g1, g2, name="alignment") 
+# load ricci graphs
+g1 = nx.read_edgelist(ricci_graph1, data=True, create_using=nx.DiGraph)    
+g2 = nx.read_edgelist(ricci_graph2, data=True, create_using=nx.DiGraph)
 
-# create dataframe with alignment info and node metadata (labels and )
-# load pangenome graphs with node info, and add the weight
 gfa_loader = GFALoader(undirected=False)
 graph1 = gfa_loader(gfa1)
 for edge, d in g1.edges.items():
@@ -194,5 +209,7 @@ for edge, d in g2.edges.items():
 	graph2.edges[edge]["weight"] = d["weight"]
 	graph2.edges[edge]["curvature"] = d["curvature"]
 
+alignment = aligner(g1, g2, name="alignment") 
 df_alignment = parse_alignment(alignment, graph1, graph2)
+df_aligment.to_csv("alignment.tsv", sep="\t")
 ```
