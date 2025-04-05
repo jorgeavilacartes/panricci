@@ -92,6 +92,7 @@ def align(
     gfa2: Annotated[str, typer.Option("--gfa2", "-g2", help="Path to the second GFA file. Required if metadata-nodes is set.")] = None, 
     weight_node_labels: Annotated[float, typer.Option("--weight-node-labels", "-w", min=0, max=0.99, help="Weight for node labels in the alignment cost function. Default: 0.0.")] = 0.0,
     log_level: Annotated[str, typer.Option("--log-level", "-l", help="Log level. Default: INFO.")] = "INFO",
+    store_bipartite: Annotated[bool, typer.Option("--store-bipartite", "-sb", help="Store the bipartite graph used for alignment.")] = False,
 ):
     
     from pathlib import Path
@@ -103,10 +104,11 @@ def align(
     dirsave=Path(path_save).parent
     dirsave.parent.mkdir(exist_ok=True, parents=True)
 
+    path_save_bipartite = dirsave.joinpath("bipartite-graph.edgelist") if store_bipartite else None
     aligner = GraphAlignment(
                 ricci_embedding = True, 
                 weight_node_labels = weight_node_labels,
-                path_save_bipartite = dirsave.joinpath("bipartite-graph.edgelist"),
+                path_save_bipartite = path_save_bipartite,
                 log_level = log_level,
                 ) 
 
