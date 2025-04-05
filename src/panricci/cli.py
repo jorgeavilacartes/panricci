@@ -101,7 +101,7 @@ def align(
     from panricci.alignment import GraphAlignment, parse_alignment
 
     dirsave=Path(path_save).parent
-    dirsave.parent.mkdir(exist_ok=True, parents=True)
+    dirsave.mkdir(exist_ok=True, parents=True)
 
     path_save_bipartite = dirsave.joinpath("bipartite-graph.edgelist") if store_bipartite else None
     aligner = GraphAlignment(
