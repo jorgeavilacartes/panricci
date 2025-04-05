@@ -32,7 +32,7 @@ class GraphAlignment:
                 seq_embedding: bool = False,
                 kmer_size: Optional[int] = None,
                 max_len: Optional[int] = None,
-                dirsave: Optional[_Path] = None,
+                path_save_bipartite: Optional[_Path] = None,
                 threshold_alignment: float = 1e5,
                 weight_node_labels: float = 0.0,
                 log_level: str = "INFO", 
@@ -54,13 +54,13 @@ class GraphAlignment:
         self.weight_node_labels = weight_node_labels
         self.weight_node_embeddings = 1.0 - self.weight_node_labels
 
-        if dirsave:
-            dirsave=Path(dirsave)
-            dirsave.mkdir(exist_ok=True, parents=True)
-            self.dirsave = dirsave
-        else:
-            self.dirsave=None
-    
+        # to save bipartite graph used for alignment
+        self.path_save_bipartite = path_save_bipartite
+        if path_save_bipartite:
+            path_save_bipartite=Path(path_save_bipartite)
+            path_save_bipartite.parent.mkdir(exist_ok=True, parents=True)
+            self.path_save_bipartite = path_save_bipartite
+        
     def __call__(self, ricci_graph1, ricci_graph2, name=None):
         "Alignment of two graphs with Ricci Metric"
         name = "bipartite-graph" if name is None else name
@@ -69,9 +69,9 @@ class GraphAlignment:
         logging.info("Creating bipartite graph")
         bipartite_graph = self.create_bipartite_graph(ricci_graph1, ricci_graph2,)
         
-        if self.dirsave:
+        if self.path_save_bipartite:
             logging.info("Saving bipartite graph")
-            nx.write_edgelist(bipartite_graph, self.dirsave.joinpath(f"{name}.edgelist"), data=True)
+            nx.write_edgelist(bipartite_graph, self.path_save_bipartite, data=True)
 
         # Compute alignment between the two graphs
         logging.info("Starting alignment on bipartite graph: minimum-weight-full-matching")            
@@ -132,13 +132,13 @@ class GraphAlignment:
                 if self.weight_node_labels > 0:
                     cost_labels = self.compute_cost_labels(ricci_graph1.nodes[node1].get("label"), ricci_graph2.nodes[node2].get("label"))
                 else:   
-                    cost_labels = 0 
+                    cost_labels = np.float64(0) 
 
                 # cost of aligning two nodes is = weight_node_embeddings*cost_embeddings + weight_node_labels*cost_labels
                 cost_alignment_nodes = self.weight_node_embeddings * cost_embeddings + self.weight_node_labels * cost_labels
                 
                 # update bipartite graph with the cost of aligning two nodes
-                bipartite_graph.add_edge(node1+"-1", node2+"-2", weight=cost_alignment_nodes)
+                bipartite_graph.add_edge(node1+"-1", node2+"-2", weight=cost_alignment_nodes, cost_labels=cost_labels, cost_embeddings=cost_embeddings)
 
         logging.info("end - create_bipartite_graph")
         return bipartite_graph
@@ -146,7 +146,7 @@ class GraphAlignment:
     @staticmethod
     def compute_cost_labels(seq1, seq2,):
         "Weight to penalize cost of aligning two nodes"
-        return 1 if seq1 != seq2 else 0
+        return np.float64(1) if seq1 != seq2 else np.float64(0)
     
     @staticmethod
     def compute_cost_embeddings(emb1, emb2):

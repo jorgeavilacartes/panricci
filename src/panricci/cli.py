@@ -100,21 +100,21 @@ def align(
     from panricci.utils import GFALoader
     from panricci.alignment import GraphAlignment, parse_alignment
 
-    dirsave=Path(path_save)
+    dirsave=Path(path_save).parent
     dirsave.parent.mkdir(exist_ok=True, parents=True)
-
-    # add weights to graphs
-    g1 = nx.read_edgelist(ricci_graph1, data=True, create_using=nx.DiGraph) # DiGraph to find source and sinks nodes   
-    g2 = nx.read_edgelist(ricci_graph2, data=True, create_using=nx.DiGraph) # Otherwise, provide source and sinks nodes (TODO)
 
     aligner = GraphAlignment(
                 ricci_embedding = True, 
                 weight_node_labels = weight_node_labels,
+                path_save_bipartite = dirsave.joinpath("bipartite-graph.edgelist"),
                 log_level = log_level,
                 ) 
-    alignment = aligner(g1, g2, name="alignment") 
 
     # load pangenome graphs with node info, and add the weight
+    g1 = nx.read_edgelist(ricci_graph1, data=True, create_using=nx.DiGraph) # DiGraph to find source and sinks nodes   
+    g2 = nx.read_edgelist(ricci_graph2, data=True, create_using=nx.DiGraph) # Otherwise, provide source and sinks nodes (TODO)
+
+    # add weights to graphs
     if metadata_nodes:
         gfa_loader = GFALoader(undirected=False)
         graph1 = gfa_loader(gfa1)
@@ -129,10 +129,12 @@ def align(
     else:
         graph1 = g1 
         graph2 = g2
-    
+
+    alignment = aligner(graph1, graph2, name="alignment") 
+
     parse_alignment(alignment, graph1, graph2).\
     sort_values(by="cost_alignment").\
-    to_csv(dirsave,sep="\t")
+    to_csv(path_save,sep="\t")
 
 
 if __name__ == "__main__":
