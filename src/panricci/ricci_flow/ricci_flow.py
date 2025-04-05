@@ -77,7 +77,6 @@ class RicciFlow:
         logging.debug(f"Ricci-Flow iteration {self._counter_iters}")
 
         new_weights = {}
-        new_curvatures = {}
         for edge in self.G.edges():
 
             # compute curvature and update it
@@ -108,7 +107,7 @@ class RicciFlow:
 
         # 1. extract subgraph containing only the involved nodes in dist1 and dist2 
         nodes_subgraph = list(distribution_node1.keys()) + list(distribution_node2.keys())
-        subgraph = self.G.subgraph(nodes_subgraph)
+        subgraph = self.G.subgraph(nodes_subgraph).to_undirected()
         
         # 2. compute all-vs-all shortest paths in the subgraph
         distances_subgraph = nx.shortest_path(subgraph, weight="weight", method="dijkstra")

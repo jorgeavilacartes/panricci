@@ -45,10 +45,10 @@ def ricci_flow(
     iterations: Annotated[int, typer.Option("--iterations", "-i", help="Maximum number of iterations to run Ricci-Flow.")],
     outdir: Annotated[Path, typer.Option("--outdir", "-o", help="Output directory to save .")] = "output-ricci-flow/ricci-graph", 
     tol_curvature: Annotated[float, typer.Option("--tol-curvature", "-t", help="Tolerance for curvature. If all curvatures are smaller than this, then the algorithm stop.")] = 1e-11,
-    undirected: Annotated[bool, typer.Option("--undirected", "-u", help="Treat the graph as undirected for Wasserstein distance computation.")] = False,
     sequence_graph: Annotated[bool, typer.Option("--sequence-graph", "-s", help="If set, define node distributions as a sequence graph, otherwise use the one for variation graphs (considering paths).")] = False,
     log_level: Annotated[str, typer.Option("--log-level", "-l", help="Log level. Default: INFO.")] = "INFO",
     save_intermediate_graphs: Annotated[bool, typer.Option("--save-intermediate-graphs", "-si", help="Save intermediate graphs.")] = False,
+    undirected: Annotated[bool, typer.Option("--undirected", "-u", help="Load GFA as undirected graph")] = False,
     ):
     from pathlib import Path
     from panricci.ricci_flow import RicciFlow

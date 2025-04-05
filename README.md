@@ -64,7 +64,11 @@ We will use one graph from the `data` folder
 
 #### 1. Create ricci-graphs
 ```bash
-$ panricci ricci-flow --gfa data/test5.gfa --iterations 1000 --tol-curvature 1e-15 --undirected  --outdir output/test5 
+$ panricci ricci-flow \
+	--gfa data/test5.gfa \
+	--iterations 1000 \
+	--tol-curvature 1e-15 \
+	--outdir output/test5 
 ``` 
 
 - this tells `panricci` to apply the discrete Ricci-Flow algorithm for at most 1000 iterations, or until all curvatures are smaller than 1e-15 (our goal is to stop when all curvatures are 0)
