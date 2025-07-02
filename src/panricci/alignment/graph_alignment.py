@@ -151,4 +151,4 @@ class GraphAlignment:
     @staticmethod
     def compute_cost_embeddings(emb1, emb2):
         "Weight to penalize cost of aligning two nodes"
-        return np.linalg.norm(emb1 - emb2)
+        return np.linalg.norm(np.float64(emb1) - np.float64(emb2))

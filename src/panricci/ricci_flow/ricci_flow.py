@@ -64,7 +64,7 @@ class RicciFlow:
             for edge in self.G.edges:
                 self.G.edges[edge]["curvature"] = self.compute_curvature(edge)
                        
-            self.checkpoints(it, name)
+            if self.dirsave: self.checkpoints(it, name)
 
             if self.is_curvature_below_tol():
                 logging.info(f"Stopping Ricci-Flow in iteration {it}, all curvatures below tol={self.tol}")

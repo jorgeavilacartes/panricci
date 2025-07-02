@@ -1,0 +1,7 @@
+H	VN:Z:1.1
+S	2	AACCCATG
+S	3	CCTAAA
+S	4	GTGTGAAT
+P	seq1	2+,3+,4+	*
+L	2	+	3	+	0M
+L	3	+	4	+	0M

@@ -135,7 +135,7 @@ def align(
 
     parse_alignment(alignment, graph1, graph2).\
     sort_values(by="cost_alignment").\
-    to_csv(path_save,sep="\t")
+    to_csv(path_save, sep="\t", float_format="%.16f")
 
 
 if __name__ == "__main__":
