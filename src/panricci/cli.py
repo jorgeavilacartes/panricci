@@ -82,6 +82,102 @@ def ricci_flow(
 
     return G_ricci
 
+
+@app.command("ricci-flow2", help="apply ricci flow to a graph.")
+def ricci_flow2(
+    gfa: Annotated[Path, typer.Option("--gfa", "-g", help="Path to the GFA file.")], 
+    iterations: Annotated[int, typer.Option("--iterations", "-i", help="Maximum number of iterations to run Ricci-Flow.")],
+    outdir: Annotated[Path, typer.Option("--outdir", "-o", help="Output directory to save .")] = "output-ricci-flow/ricci-graph", 
+    tol_curvature: Annotated[float, typer.Option("--tol-curvature", "-t", help="Tolerance for curvature. If all curvatures are smaller than this, then the algorithm stop.")] = 1e-11,
+    sequence_graph: Annotated[bool, typer.Option("--sequence-graph", "-s", help="If set, define node distributions as a sequence graph, otherwise use the one for variation graphs (considering paths).")] = False,
+    log_level: Annotated[str, typer.Option("--log-level", "-l", help="Log level. Default: INFO/DEBUG")] = "INFO",
+    undirected: Annotated[bool, typer.Option("--undirected", "-u", help="Load GFA as undirected graph")] = False,
+    eps: Annotated[float, typer.Option("--eps", help="Step size for curvature to update weights")] = 0.1,
+    min_weight: Annotated[float, typer.Option("--min-weight", help="minimum weight for edge")] = 0.000001,
+    ):
+    from pathlib import Path
+    from panricci.ricci_flow import RicciFlow2 as RicciFlow
+    from panricci.utils import GFALoader
+    
+    if sequence_graph:
+        from panricci.node_distributions.sequence_graph import DistributionNodes
+    else:
+        from panricci.node_distributions.variation_graph import DistributionNodes
+    
+    dirsave    = Path(outdir); dirsave.mkdir(exist_ok=True, parents=True)
+    gfa_loader = GFALoader(undirected=undirected)
+
+    # load graph
+    G = gfa_loader(gfa)
+
+    # compute distribution of nodes of the graph
+    distribution = DistributionNodes(G, alpha=0.5)
+
+    # run RicciFlow
+    ricci = RicciFlow(
+        G, 
+        distribution,
+        dirsave_graphs=outdir,
+        step_size=eps,      # Start with 0.1 instead of 1.0
+        min_weight=min_weight,    # Prevent weights from going to zero
+        log_level=log_level,   # See warnings
+        tol_curvature=tol_curvature,
+    )
+
+    G_ricci = ricci.run(iterations=iterations)
+    return G_ricci
+
+@app.command("normalized-ricci-flow", help="Normalized Ricci Flow")
+def normalized_ricci_flow(
+    gfa: Annotated[Path, typer.Option("--gfa", "-g", help="Path to the GFA file.")], 
+    iterations: Annotated[int, typer.Option("--iterations", "-i", help="Maximum number of iterations to run Ricci-Flow.")],
+    sigma: Annotated[float, typer.Option("--sigma", help="Sum of weights after each iteration")] = 5,
+    outdir: Annotated[Path, typer.Option("--outdir", "-o", help="Output directory to save .")] = "output-ricci-flow/ricci-graph", 
+    tol_curvature: Annotated[float, typer.Option("--tol-curvature", "-t", help="Tolerance for curvature. If all curvatures are smaller than this, then the algorithm stop.")] = 1e-11,
+    sequence_graph: Annotated[bool, typer.Option("--sequence-graph", "-s", help="If set, define node distributions as a sequence graph, otherwise use the one for variation graphs (considering paths).")] = False,
+    log_level: Annotated[str, typer.Option("--log-level", "-l", help="Log level. Default: INFO/DEBUG")] = "INFO",
+    undirected: Annotated[bool, typer.Option("--undirected", "-u", help="Load GFA as undirected graph")] = False,
+    eps: Annotated[float, typer.Option("--eps", help="Step size for curvature to update weights")] = 0.1,
+    min_weight: Annotated[float, typer.Option("--min-weight", help="minimum weight for edge")] = 0.000001,
+    ):
+
+    from pathlib import Path
+    from panricci.ricci_flow import NormalizedRicciFlow #NormalizedRicciFlow2 as NormalizedRicciFlow
+    from panricci.utils import GFALoader
+    
+    if sequence_graph:
+        from panricci.node_distributions.sequence_graph import DistributionNodes
+    else:
+        from panricci.node_distributions.variation_graph import DistributionNodes
+    
+    dirsave    = Path(outdir); dirsave.mkdir(exist_ok=True, parents=True)
+    gfa_loader = GFALoader(undirected=undirected)
+
+    # load graph
+    G = gfa_loader(gfa)
+
+    # compute distribution of nodes of the graph
+    distribution = DistributionNodes(G, alpha=0.5)
+
+    # Create Normalized Ricci Flow instance
+    nrf = NormalizedRicciFlow(
+        G,
+        distribution=distribution,
+        log_level=log_level,
+        use_rescaling=True,
+        eps=eps,
+        tol_curvature=tol_curvature,
+        dirsave_graphs=outdir,
+        lr_schedule="adaptive",
+    )
+
+    # Run for specified iterations
+    G_final = nrf.run(iterations=iterations, name="test_graph")
+    
+    print(f"\nFinal edge weights:")
+    for u, v, data in G_final.edges(data=True):
+        print(f"Edge ({u}, {v}): weight={data['weight']:.6f}, curvature={data['curvature']:.6f}")
+
 @app.command("align", help="Alignment of ricci graphs.")
 def align(
     ricci_graph1: Annotated[Path, typer.Option("--ricci-graph1", "-r1", help="Path to the first Ricci graph file.")],
@@ -136,6 +232,48 @@ def align(
     parse_alignment(alignment, graph1, graph2).\
     sort_values(by="cost_alignment").\
     to_csv(path_save, sep="\t", float_format="%.16f")
+
+@app.command("modify-gfa", help="Modify a GFA file by removing edges, nodes or paths.")
+def modify_gfa(
+    gfa: Annotated[Path, typer.Option("--gfa", "-g", help="Path to the GFA file.")],
+    outdir: Annotated[Path, typer.Option("--outdir", "-o", help="Output directory to save the modified GFA file.")] = "output-ricci-flow/modified-gfa",
+    remove_edges: Annotated[str, typer.Option("--remove-edges", help="Comma-separated list of edges to remove (format: node1-node2). Nodes are collapsed by default.")] = None,
+    remove_nodes: Annotated[str, typer.Option("--remove-nodes", help="Comma-separated list of nodes to remove. Predecessors and successors are reconnected.")] = None,
+    remove_paths: Annotated[str, typer.Option("--remove-paths", help="Comma-separated list of paths to remove.")] = None,
+    no_collapse: Annotated[bool, typer.Option("--no-collapse", help="When removing edges, do not collapse adjacent nodes.")] = False,
+    no_reconnect: Annotated[bool, typer.Option("--no-reconnect", help="When removing nodes, do not reconnect predecessors to successors.")] = False,
+    remove_unused_nodes: Annotated[bool, typer.Option("--remove-unused-nodes", help="When removing paths, also remove nodes not used by any remaining path.")] = False,
+):
+    from pathlib import Path
+    from panricci.utils import GFAGraph
+
+    dirsave = Path(outdir); dirsave.mkdir(exist_ok=True, parents=True)
+
+    # load graph
+    G = GFAGraph(gfa)
+    print(f"Loaded: {G}")
+
+    # Remove specified edges
+    if remove_edges:
+        for edge in remove_edges.split(","):
+            node1, node2 = edge.strip().split("-")
+            G.remove_edge(node1.strip(), node2.strip(), collapse_nodes=not no_collapse)
+
+    # Remove specified nodes
+    if remove_nodes:
+        for node in remove_nodes.split(","):
+            G.remove_node(node.strip(), reconnect=not no_reconnect)
+
+    # Remove specified paths
+    if remove_paths:
+        for path_name in remove_paths.split(","):
+            G.remove_path(path_name.strip(), remove_unused_nodes=remove_unused_nodes)
+
+    # Save modified graph as GFA
+    modified_gfa_path = dirsave.joinpath(f"{Path(gfa).stem}_modified.gfa")
+    G.save(str(modified_gfa_path))
+    print(f"\nSaved modified GFA to: {modified_gfa_path}")
+    print(f"Result: {G}")
 
 
 if __name__ == "__main__":

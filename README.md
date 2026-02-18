@@ -36,52 +36,109 @@ ___
 ## CLI
 `panricci` works with pangenome graphs (variation graphs or sequence graphs) in `.gfa` format.
 
-1. You need to evolve the metric of the graph, this is randomnly initialized.
-2. Once you have two graphs with the metrics after Ricci-Flow, we can align them.
-3. Check the results. 
-
-```{bash}
-$ panricci --help 
-                                                                                              
- Usage: panricci [OPTIONS] COMMAND [ARGS]...                                                  
-                                                                                              
- 🐱 Welcome to PanRicci :  Alignment of pangenome graphs with Ricci-Flow                      
-                                                                                              
-╭─ Options ──────────────────────────────────────────────────────────────────────────────────╮
-│ --install-completion          Install completion for the current shell.                    │
-│ --show-completion             Show completion for the current shell, to copy it or         │
-│                               customize the installation.                                  │
-│ --help                        Show this message and exit.                                  │
-╰────────────────────────────────────────────────────────────────────────────────────────────╯
-╭─ Commands ─────────────────────────────────────────────────────────────────────────────────╮
-│ ricci-flow   apply ricci flow to a graph.                                                  │
-│ align        Alignment of ricci graphs.                                                    │
-╰────────────────────────────────────────────────────────────────────────────────────────────╯
+```bash
+$ panricci --help
 ```
 
-### Example 
-We will use one graph from the `data` folder
+Available commands:
 
-#### 1. Create ricci-graphs
+| Command | Description |
+|---------|-------------|
+| `ricci-flow` | Apply Ricci Flow to a graph |
+| `ricci-flow2` | Apply Ricci Flow (v2) with configurable step size and minimum weight |
+| `normalized-ricci-flow` | Apply Normalized Ricci Flow with weight rescaling |
+| `align` | Alignment of ricci graphs |
+| `modify-gfa` | Modify a GFA file by removing edges, nodes or paths |
+
+---
+
+### `ricci-flow`
+
+Apply the discrete Ricci-Flow algorithm to evolve the metric of a pangenome graph.
+
 ```bash
 $ panricci ricci-flow \
 	--gfa data/test5.gfa \
 	--iterations 1000 \
 	--tol-curvature 1e-15 \
-	--outdir output/test5 
-``` 
+	--outdir output/test5
+```
 
-- this tells `panricci` to apply the discrete Ricci-Flow algorithm for at most 1000 iterations, or until all curvatures are smaller than 1e-15 (our goal is to stop when all curvatures are 0)
-- the results for each iteration (weights and curvature for each edge of the graph) will be saved in the `output/test5` directory
-- the option `--undirected` allows the computation of the Wasserstein distance over the local subgraph of two nodes avoiding the directions, which is needed to keep the Wasserstein distance as a metric, so we recommend to keep this option.
-- by default node distributions are defined for a variation graph, i.e. paths are considered. If you have a sequence graph, where paths are not part of the .gfa file, then you can add the option `--sequence-graph` 
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--gfa` | `-g` | Path to the GFA file | *required* |
+| `--iterations` | `-i` | Maximum number of iterations | *required* |
+| `--outdir` | `-o` | Output directory | `output-ricci-flow/ricci-graph` |
+| `--tol-curvature` | `-t` | Tolerance for curvature convergence | `1e-11` |
+| `--sequence-graph` | `-s` | Use sequence graph node distributions (instead of variation graph) | `False` |
+| `--log-level` | `-l` | Log level | `INFO` |
+| `--save-intermediate-graphs` | `-si` | Save graphs at each iteration | `False` |
+| `--undirected` | `-u` | Load GFA as undirected graph | `False` |
 
-#### 2. Align ricci-graphs
-The **alignment** consists on finding a mapping **between nodes of two graphs**.
+- The algorithm runs for at most `--iterations` iterations, or until all curvatures are smaller than `--tol-curvature` (the goal is to stop when all curvatures are 0).
+- The `--undirected` option allows the computation of the Wasserstein distance over the local subgraph avoiding directions, which is needed to keep the Wasserstein distance as a metric.
+- By default node distributions are defined for a variation graph (paths are considered). If you have a sequence graph where paths are not part of the `.gfa` file, use `--sequence-graph`.
 
-You can either create the ricci graph for another gfa in the folder, or we can use the same ricci graph to be align against itself, which we will do now.
+---
 
-Notice that in the `output/test5` folder you will find a lot (one for each iteration), we will take the last one, which should be the file `test5-ricciflow-52.edgelist`
+### `ricci-flow2`
+
+An alternative Ricci Flow implementation with configurable step size and minimum edge weight.
+
+```bash
+$ panricci ricci-flow2 \
+	--gfa data/test5.gfa \
+	--iterations 1000 \
+	--eps 0.1 \
+	--min-weight 0.000001 \
+	--outdir output/test5
+```
+
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--gfa` | `-g` | Path to the GFA file | *required* |
+| `--iterations` | `-i` | Maximum number of iterations | *required* |
+| `--outdir` | `-o` | Output directory | `output-ricci-flow/ricci-graph` |
+| `--tol-curvature` | `-t` | Tolerance for curvature convergence | `1e-11` |
+| `--sequence-graph` | `-s` | Use sequence graph node distributions | `False` |
+| `--log-level` | `-l` | Log level (`INFO`/`DEBUG`) | `INFO` |
+| `--undirected` | `-u` | Load GFA as undirected graph | `False` |
+| `--eps` | | Step size for curvature to update weights | `0.1` |
+| `--min-weight` | | Minimum weight for an edge (prevents weights going to zero) | `0.000001` |
+
+---
+
+### `normalized-ricci-flow`
+
+Apply Normalized Ricci Flow, which rescales weights after each iteration to maintain a constant total weight.
+
+```bash
+$ panricci normalized-ricci-flow \
+	--gfa data/test5.gfa \
+	--iterations 1000 \
+	--sigma 5 \
+	--eps 0.1 \
+	--outdir output/test5
+```
+
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--gfa` | `-g` | Path to the GFA file | *required* |
+| `--iterations` | `-i` | Maximum number of iterations | *required* |
+| `--sigma` | | Target sum of weights after each iteration | `5` |
+| `--outdir` | `-o` | Output directory | `output-ricci-flow/ricci-graph` |
+| `--tol-curvature` | `-t` | Tolerance for curvature convergence | `1e-11` |
+| `--sequence-graph` | `-s` | Use sequence graph node distributions | `False` |
+| `--log-level` | `-l` | Log level (`INFO`/`DEBUG`) | `INFO` |
+| `--undirected` | `-u` | Load GFA as undirected graph | `False` |
+| `--eps` | | Step size for curvature to update weights | `0.1` |
+| `--min-weight` | | Minimum weight for an edge | `0.000001` |
+
+---
+
+### `align`
+
+Align two ricci graphs by finding a mapping between their nodes based on relative node representations.
 
 ```bash
 $ panricci align \
@@ -90,51 +147,46 @@ $ panricci align \
 	--path-save output/alignment.tsv
 ```
 
-you should get a csv file with the following information inside
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--ricci-graph1` | `-r1` | Path to the first Ricci graph file | *required* |
+| `--ricci-graph2` | `-r2` | Path to the second Ricci graph file | *required* |
+| `--path-save` | `-p` | Path to save alignment results | `output-ricci-flow/align/ricci1-ricci2.tsv` |
+| `--weight-node-labels` | `-w` | Weight for node labels in the cost function (0-0.99). If > 0, `--gfa1` and `--gfa2` must be provided | `0.0` |
+| `--gfa1` | `-g1` | Path to the first GFA file (for node metadata) | `None` |
+| `--gfa2` | `-g2` | Path to the second GFA file (for node metadata) | `None` |
+| `--log-level` | `-l` | Log level | `INFO` |
+| `--store-bipartite` | `-sb` | Store the bipartite graph used for alignment | `False` |
 
-```bash
- 	 edge          	 cost_alignment	 node1	 node2
-0	 ['4-1', '4-2']	            0.0	     4	     4	       	       	            	 
-1	 ['3-1', '3-2']	            0.0	     3	     3	       	       	            	 
-2	 ['2-1', '2-2']	            0.0	     2	     2	       	       	            	 
-3	 ['1-1', '1-2']	            0.0	     1	     1	       	       	            	 
-```
+The output is a TSV file with the following columns:
 
-the columns,
-
-- `node1`: the identifier of the node in the ricci graph 1
-- `node2`: the identifier of the node in the ricci graph 2
-- `edge` : are tuples of strings of the form '<node_id>-<graph_id>' 
+- `node1`: the identifier of the node in ricci graph 1
+- `node2`: the identifier of the node in ricci graph 2
+- `edge`: tuples of strings of the form `<node_id>-<graph_id>`
 - `cost_alignment`: the cost of aligning `node1` and `node2` (euclidean distance between their relative node representations)
 
+Example output:
 
-as we can see from this result, the first row says that node 4 of the graph1 was aligned to node 4 of graph2, with a cost alignment of 0, which means that they have the same relative node representation.
+```
+ 	 edge          	 cost_alignment	 node1	 node2
+0	 ['4-1', '4-2']	            0.0	     4	     4
+1	 ['3-1', '3-2']	            0.0	     3	     3
+2	 ['2-1', '2-2']	            0.0	     2	     2
+3	 ['1-1', '1-2']	            0.0	     1	     1
+```
 
-
-Additionally, you can ask to add node metadata (label and node depth) to the output by providing the original .gfa files as follows
+To include node metadata (label and node depth), provide the original `.gfa` files:
 
 ```bash
 $ panricci align \
 	--ricci-graph1 output/test5/test5-ricciflow-52.edgelist \
 	--ricci-graph2 output/test5/test5-ricciflow-52.edgelist \
 	--path-save output/alignment.tsv \
-	--gfa1  data/test5.gfa \
+	--gfa1 data/test5.gfa \
 	--gfa2 data/test5.gfa
 ```
 
-The output should look like this
-
-```bash
- 	 edge          	 cost_alignment	 node1	 node2	 label1      	 label2      	 node_depth1	 node_depth2
-0	 ['4-1', '4-2']	            0.0	     4	     4	 CAACGTTTTTTT	 CAACGTTTTTTT	         0.5	         0.5
-1	 ['3-1', '3-2']	            0.0	     3	     3	 CTAGA       	 CTAGA       	         1.0	         1.0
-2	 ['2-1', '2-2']	            0.0	     2	     2	 A           	 A           	         0.5	         0.5
-3	 ['1-1', '1-2']	            0.0	     1	     1	 C           	 C           	         1.0	         1.0
-```
-
-The **cost of alinging two nodes** is the euclidean distance between the relative node representation of each node w.r.t. source and sink nodes in the graph.
-There is the option of including as well a cost that penalizes nodes with different labels
-
+To penalize alignment of nodes with different labels, use `--weight-node-labels`:
 
 ```bash
 $ panricci align \
@@ -142,9 +194,57 @@ $ panricci align \
 	--ricci-graph2 output/test5/test5-ricciflow-52.edgelist \
 	--path-save output/alignment.tsv \
 	--weight-node-labels 0.5 \
-	--gfa1  data/test5.gfa \
+	--gfa1 data/test5.gfa \
 	--gfa2 data/test5.gfa
 ```
+
+---
+
+### `modify-gfa`
+
+Modify a GFA file by removing edges, nodes, or paths. When removing edges, the adjacent nodes are collapsed into a single node with concatenated sequences by default. When removing nodes, predecessors and successors are reconnected by default.
+
+```bash
+$ panricci modify-gfa \
+	--gfa data/test5.gfa \
+	--outdir output/modified \
+	--remove-nodes "6,7"
+```
+
+| Option | Short | Description | Default |
+|--------|-------|-------------|---------|
+| `--gfa` | `-g` | Path to the GFA file | *required* |
+| `--outdir` | `-o` | Output directory for the modified GFA file | `output-ricci-flow/modified-gfa` |
+| `--remove-edges` | | Comma-separated edges to remove (format: `node1-node2`) | `None` |
+| `--remove-nodes` | | Comma-separated nodes to remove | `None` |
+| `--remove-paths` | | Comma-separated paths to remove | `None` |
+| `--no-collapse` | | Do not collapse adjacent nodes when removing edges | `False` |
+| `--no-reconnect` | | Do not reconnect predecessors to successors when removing nodes | `False` |
+| `--remove-unused-nodes` | | Remove nodes not used by any remaining path after path removal | `False` |
+
+#### Examples
+
+Remove edges (collapses nodes by default):
+```bash
+$ panricci modify-gfa --gfa input.gfa --remove-edges "4-5,10-11"
+```
+
+Remove edges without collapsing:
+```bash
+$ panricci modify-gfa --gfa input.gfa --remove-edges "4-5" --no-collapse
+```
+
+Remove nodes (reconnects predecessors to successors):
+```bash
+$ panricci modify-gfa --gfa input.gfa --remove-nodes "6,7,8"
+```
+
+Remove paths and clean up unused nodes:
+```bash
+$ panricci modify-gfa --gfa input.gfa --remove-paths "seq1,seq2" --remove-unused-nodes
+```
+
+The modified GFA file is saved as `<original_name>_modified.gfa` in the output directory.
 
 
 ## Python API

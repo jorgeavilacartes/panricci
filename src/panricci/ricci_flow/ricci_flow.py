@@ -19,6 +19,7 @@ class RicciFlow:
                 save_intermediate_graphs: bool=False,
                 tol_curvature = 1e-11,
                 log_level: str = "INFO",
+                eps: float = 0.1,
                 ): 
         logging.basicConfig(level=eval(f"logging.{log_level}"),
                             format='[Ricci-Flow] %(asctime)s.%(msecs)03d | %(message)s',
@@ -30,7 +31,7 @@ class RicciFlow:
         self.save_last = save_last
         self.save_intermediate_graphs = save_intermediate_graphs
         self.tol = tol_curvature # tolerance of minimum curvature to stop Ricci-Flow when |K(u,v)| < tol for all (u,v) edge of G
- 
+        self.eps = eps
         self._counter_iters = 0
 
         if overwrite is False and self.dirsave:
@@ -72,7 +73,7 @@ class RicciFlow:
             
         return self.G
             
-    def iter_ricci_flow(self, eps=1):
+    def iter_ricci_flow(self,):
         "Compute new curvatures, and distances with Ricci Flow"
         logging.debug(f"Ricci-Flow iteration {self._counter_iters}")
 
@@ -85,7 +86,7 @@ class RicciFlow:
             # update weights with Ricci-Flow
             current_weight = self.G.edges[edge]["weight"]
         
-            new_weight = current_weight - eps*current_curvature*current_weight
+            new_weight = current_weight - self.eps*current_curvature*current_weight
             
             new_weights[edge] = {"weight": new_weight}
 
@@ -99,7 +100,7 @@ class RicciFlow:
         
         W = self.wasserstein(d_1,d_2)
         d = self.G.edges[edge]["weight"]
-        
+        print("W",W, "d", d)        
         return 1 - W/d
 
     def wasserstein(self, distribution_node1, distribution_node2):
@@ -158,6 +159,6 @@ class RicciFlow:
 
         for edge in self.G.edges():
             self.G.edges[edge]["weight"] = self.G.edges[edge].get("weight",weight_init)
-
+            # print(self.G.edges[edge]["weight"])
         for edge in self.G.edges():
             self.G.edges[edge]["curvature"] = self.compute_curvature(edge)
